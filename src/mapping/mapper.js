@@ -42,7 +42,7 @@ function buildVenuePayload(show, airportCode, marketId) {
 function buildEventPayload(show, { clientId, venueId, statusId, airportCode, marketId }, calls) {
   const isoDates = calls.map(c => toISODate(c.date)).sort();
   return {
-    name: String(show['Job Number']),
+    name: String(show['Job Name']),
     external_code: String(show['Job Number']),
     division: config.divisionId,
     client: clientId,

@@ -78,4 +78,51 @@ function groupIntoCalls(rows) {
   return Array.from(groups.values());
 }
 
-module.exports = { parseCSV };
+/**
+ * Parses a CSV string (already loaded into memory) and returns an array of job objects.
+ * Supports multiple jobs in a single file by detecting multiple VALUE rows.
+ *
+ * Returns:
+ *   Array<{ show: Object, calls: Array<{ date, startTime, endTime, callType, positions }> }>
+ */
+function parseCSVContent(content) {
+  const rows = parse(content, {
+    columns: true,
+    skip_empty_lines: false,
+    trim: true,
+    relax_column_count: true,
+  });
+
+  // Find the index of every VALUE row — one per job
+  const valueIndices = rows.reduce((acc, row, i) => {
+    if (row['DATA'] === 'VALUE') acc.push(i);
+    return acc;
+  }, []);
+
+  if (valueIndices.length === 0) {
+    throw new Error('No VALUE row found in CSV. Expected at least one row starting with "VALUE".');
+  }
+
+  return valueIndices.map((valueIdx, jobIdx) => {
+    const valueRow = rows[valueIdx];
+    const endIdx = valueIndices[jobIdx + 1] ?? rows.length;
+    const jobRows = rows.slice(valueIdx, endIdx);
+
+    const positionRows = jobRows.filter(r =>
+      (r['DATA'] === 'VALUE' || !r['DATA']) &&
+      r['Date'] &&
+      r['Position Title']
+    );
+
+    if (positionRows.length === 0) {
+      throw new Error(
+        `No position rows found for job "${valueRow['Job Number'] || `#${jobIdx + 1}`}". ` +
+        'At minimum one row must have a Date and Position Title.'
+      );
+    }
+
+    return { show: valueRow, calls: groupIntoCalls(positionRows) };
+  });
+}
+
+module.exports = { parseCSV, parseCSVContent };

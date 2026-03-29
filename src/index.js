@@ -66,7 +66,7 @@ async function resolveAirportCode(marketStr, allAirports) {
 
 // ─── Upsert: Client ───────────────────────────────────────────────────────────
 
-async function upsertClient(show) {
+async function upsertClient(show, logFn) {
   const payload = buildClientPayload(show);
   const existing = await api.findClientByName(payload.name);
 
@@ -74,21 +74,21 @@ async function upsertClient(show) {
     const changes = computeDiff(payload, existing);
     if (changes) {
       await api.updateClient(existing.id, changes);
-      log('updated', 'Client', payload.name);
+      logFn('updated', 'Client', payload.name);
     } else {
-      log('unchanged', 'Client', payload.name);
+      logFn('unchanged', 'Client', payload.name);
     }
     return existing.id;
   }
 
   const created = await api.createClient(payload);
-  log('created', 'Client', payload.name);
+  logFn('created', 'Client', payload.name);
   return created.id;
 }
 
 // ─── Upsert: Client Contact ───────────────────────────────────────────────────
 
-async function upsertClientContact(show, clientId) {
+async function upsertClientContact(show, clientId, logFn) {
   const payload = buildClientContactPayload(show, clientId);
   const contacts = await api.getClientContacts(clientId);
 
@@ -102,21 +102,21 @@ async function upsertClientContact(show, clientId) {
     const changes = computeDiff(payload, existing);
     if (changes) {
       await api.updateClientContact(existing.id, changes);
-      log('updated', 'ClientContact', payload.email || payload.first_name);
+      logFn('updated', 'ClientContact', payload.email || payload.first_name);
     } else {
-      log('unchanged', 'ClientContact', payload.email || payload.first_name);
+      logFn('unchanged', 'ClientContact', payload.email || payload.first_name);
     }
     return existing.id;
   }
 
   const created = await api.createClientContact(payload);
-  log('created', 'ClientContact', payload.email || payload.first_name);
+  logFn('created', 'ClientContact', payload.email || payload.first_name);
   return created.id;
 }
 
 // ─── Upsert: Venue ────────────────────────────────────────────────────────────
 
-async function upsertVenue(show, airportCode, marketId) {
+async function upsertVenue(show, airportCode, marketId, logFn) {
   const payload = buildVenuePayload(show, airportCode, marketId);
   const existing = await api.findVenueByName(payload.name);
 
@@ -124,31 +124,31 @@ async function upsertVenue(show, airportCode, marketId) {
     const changes = computeDiff(payload, existing);
     if (changes) {
       await api.updateVenue(existing.id, changes);
-      log('updated', 'Venue', payload.name);
+      logFn('updated', 'Venue', payload.name);
     } else {
-      log('unchanged', 'Venue', payload.name);
+      logFn('unchanged', 'Venue', payload.name);
     }
     return existing.id;
   }
 
   const created = await api.createVenue(payload);
-  log('created', 'Venue', payload.name);
+  logFn('created', 'Venue', payload.name);
   return created.id;
 }
 
 // ─── Upsert: Venue Room ───────────────────────────────────────────────────────
 
-async function upsertVenueRoom(roomName, venueId) {
+async function upsertVenueRoom(roomName, venueId, logFn) {
   if (!roomName) return null;
 
   const created = await api.createVenueRoom({ name: roomName, venue: venueId });
-  log('created', 'VenueRoom', roomName);
+  logFn('created', 'VenueRoom', roomName);
   return created.id;
 }
 
 // ─── Upsert: Position ─────────────────────────────────────────────────────────
 
-async function upsertPosition(title) {
+async function upsertPosition(title, logFn) {
   const payload = buildPositionPayload(title);
   const existing = await api.findPositionByName(title);
 
@@ -156,50 +156,72 @@ async function upsertPosition(title) {
     const changes = computeDiff(payload, existing);
     if (changes) {
       await api.updatePosition(existing.id, changes);
-      log('updated', 'Position', title);
+      logFn('updated', 'Position', title);
     } else {
-      log('unchanged', 'Position', title);
+      logFn('unchanged', 'Position', title);
     }
     return existing.id;
   }
 
   const created = await api.createPosition(payload);
-  log('created', 'Position', title);
+  logFn('created', 'Position', title);
   return created.id;
 }
 
 // ─── Main: Import One Show ────────────────────────────────────────────────────
 
-async function importShow(show, calls, lookups) {
+async function importShow(show, calls, lookups, logFn = log) {
   const jobNumber = String(show['Job Number']);
 
-  console.log(`\nProcessing Job ${jobNumber}: "${show['Job Name']}"`);
-  console.log('─'.repeat(60));
+  logFn('info', 'Job', `Processing Job ${jobNumber}: "${show['Job Name']}"`);
+  logFn('info', 'Job', '─'.repeat(60));
 
   // Phase B.5 – Client
-  const clientId = await upsertClient(show);
+  const clientId = await upsertClient(show, logFn);
 
   // Phase B.6 – Client Contact
-  await upsertClientContact(show, clientId);
+  await upsertClientContact(show, clientId, logFn);
 
-  // Phase B.7 – Client Note
+  // Phase B.7 – Client Note (upsert by subject)
   const clientNoteBody = show['Client Notes'];
   if (clientNoteBody && clientNoteBody.trim()) {
-    await api.createClientNote({ client: clientId, subject: 'Client Notes', body: clientNoteBody.trim() });
-    log('created', 'ClientNote', 'Client Notes');
+    const existingClientNotes = await api.getClientNotes(clientId);
+    const existingClientNote = existingClientNotes.find(n => n.subject === 'Client Notes');
+    if (existingClientNote) {
+      if (existingClientNote.body !== clientNoteBody.trim()) {
+        await api.updateClientNote(existingClientNote.id, { body: clientNoteBody.trim() });
+        logFn('updated', 'ClientNote', 'Client Notes');
+      } else {
+        logFn('unchanged', 'ClientNote', 'Client Notes');
+      }
+    } else {
+      await api.createClientNote({ client: clientId, subject: 'Client Notes', body: clientNoteBody.trim() });
+      logFn('created', 'ClientNote', 'Client Notes');
+    }
   }
 
   // Phase B.8 – Venue
-  const venueId = await upsertVenue(show, lookups.airportCode, lookups.marketId);
+  const venueId = await upsertVenue(show, lookups.airportCode, lookups.marketId, logFn);
 
   // Phase B.9 – Venue Room
-  await upsertVenueRoom(show['Room'], venueId);
+  await upsertVenueRoom(show['Room'], venueId, logFn);
 
-  // Phase B.10 – Venue Note
+  // Phase B.10 – Venue Note (upsert by subject)
   const venueNoteBody = show['Venue Notes'];
   if (venueNoteBody && venueNoteBody.trim()) {
-    await api.createVenueNote({ venue: venueId, subject: 'Venue Notes', body: venueNoteBody.trim() });
-    log('created', 'VenueNote', 'Venue Notes');
+    const existingVenueNotes = await api.getVenueNotes(venueId);
+    const existingVenueNote = existingVenueNotes.find(n => n.subject === 'Venue Notes');
+    if (existingVenueNote) {
+      if (existingVenueNote.body !== venueNoteBody.trim()) {
+        await api.updateVenueNote(existingVenueNote.id, { body: venueNoteBody.trim() });
+        logFn('updated', 'VenueNote', 'Venue Notes');
+      } else {
+        logFn('unchanged', 'VenueNote', 'Venue Notes');
+      }
+    } else {
+      await api.createVenueNote({ venue: venueId, subject: 'Venue Notes', body: venueNoteBody.trim() });
+      logFn('created', 'VenueNote', 'Venue Notes');
+    }
   }
 
   // Phase B.11 – Event (upsert by external_code / Job Number)
@@ -211,22 +233,33 @@ async function importShow(show, calls, lookups) {
     const changes = computeDiff(eventPayload, existingEvent);
     if (changes) {
       await api.updateEvent(existingEvent.id, changes);
-      log('updated', 'Event', show['Job Number']);
+      logFn('updated', 'Event', show['Job Number']);
     } else {
-      log('unchanged', 'Event', show['Job Number']);
+      logFn('unchanged', 'Event', show['Job Number']);
     }
     eventId = existingEvent.id;
   } else {
     const created = await api.createEvent(eventPayload);
-    log('created', 'Event', show['Job Number']);
+    logFn('created', 'Event', show['Job Number']);
     eventId = created.id;
   }
 
-  // Phase B.12 – Event Notes
+  // Phase B.12 – Event Notes (upsert by subject)
   const eventNotePayloads = buildEventNotePayloads(show, eventId);
+  const existingEventNotes = await api.getEventNotes(eventId);
   for (const note of eventNotePayloads) {
-    await api.createEventNote(note);
-    log('created', 'EventNote', note.subject);
+    const existing = existingEventNotes.find(n => n.subject === note.subject);
+    if (existing) {
+      if (existing.body !== note.body) {
+        await api.updateEventNote(existing.id, { body: note.body });
+        logFn('updated', 'EventNote', note.subject);
+      } else {
+        logFn('unchanged', 'EventNote', note.subject);
+      }
+    } else {
+      await api.createEventNote(note);
+      logFn('created', 'EventNote', note.subject);
+    }
   }
 
   // Phase B.13 – Link SMPL Staff via event_account_user_role_relationships
@@ -248,16 +281,16 @@ async function importShow(show, calls, lookups) {
       });
 
     if (!role) {
-      console.warn(`[WARN] Lasso account_user_role not found for: ${person.name} <${person.email || 'no email'}>`);
+      logFn('warn', 'EventStaffLink', `Lasso account_user_role not found for: ${person.name} <${person.email || 'no email'}>`);
       continue;
     }
 
     const alreadyLinked = existingRelationships.some(rel => rel.account_user_role === role.id);
     if (!alreadyLinked) {
       await api.createEventAccountUserRoleRelationship({ event: eventId, account_user_role: role.id });
-      log('created', 'EventStaffLink', person.name || person.email);
+      logFn('created', 'EventStaffLink', person.name || person.email);
     } else {
-      log('unchanged', 'EventStaffLink', person.name || person.email);
+      logFn('unchanged', 'EventStaffLink', person.name || person.email);
     }
   }
 
@@ -278,19 +311,19 @@ async function importShow(show, calls, lookups) {
       const changes = computeDiff(groupPayload, existingGroup);
       if (changes) {
         await api.updateEventGroup(existingGroup.id, changes);
-        log('updated', 'EventGroup', `${call.callType} (${call.date})`);
+        logFn('updated', 'EventGroup', `${call.callType} (${call.date})`);
       } else {
-        log('unchanged', 'EventGroup', `${call.callType} (${call.date})`);
+        logFn('unchanged', 'EventGroup', `${call.callType} (${call.date})`);
       }
       groupId = existingGroup.id;
     } else {
       const created = await api.createEventGroup(groupPayload);
-      log('created', 'EventGroup', `${call.callType} (${call.date})`);
+      logFn('created', 'EventGroup', `${call.callType} (${call.date})`);
       groupId = created.id;
     }
 
     for (const positionEntry of call.positions) {
-      const positionId = await upsertPosition(positionEntry.title);
+      const positionId = await upsertPosition(positionEntry.title, logFn);
       const epPayload = buildEventPositionPayload(call, positionEntry, eventId, groupId, positionId);
 
       // Match existing event_position by composite external_code (stable across runs)
@@ -301,14 +334,14 @@ async function importShow(show, calls, lookups) {
         const changes = computeDiff(epPayload, existingEP);
         if (changes) {
           await api.updateEventPosition(existingEP.id, changes);
-          log('updated', 'EventPosition', positionEntry.title);
+          logFn('updated', 'EventPosition', positionEntry.title);
         } else {
-          log('unchanged', 'EventPosition', positionEntry.title);
+          logFn('unchanged', 'EventPosition', positionEntry.title);
         }
         eventPositionId = existingEP.id;
       } else {
         const created = await api.createEventPosition(epPayload);
-        log('created', 'EventPosition', positionEntry.title);
+        logFn('created', 'EventPosition', positionEntry.title);
         eventPositionId = created.id;
       }
 
@@ -325,18 +358,18 @@ async function importShow(show, calls, lookups) {
         const changes = computeDiff(sePayload, existingEntry);
         if (changes) {
           await api.updateScheduleEntry(existingEntry.id, changes);
-          log('updated', 'ScheduleEntry', `${sePayload.date} ${call.callType}`);
+          logFn('updated', 'ScheduleEntry', `${sePayload.date} ${call.callType}`);
         } else {
-          log('unchanged', 'ScheduleEntry', `${sePayload.date} ${call.callType}`);
+          logFn('unchanged', 'ScheduleEntry', `${sePayload.date} ${call.callType}`);
         }
       } else {
         await api.createScheduleEntry(sePayload);
-        log('created', 'ScheduleEntry', `${sePayload.date} ${call.callType}`);
+        logFn('created', 'ScheduleEntry', `${sePayload.date} ${call.callType}`);
       }
     }
   }
 
-  console.log(`\n✓ Job ${jobNumber} "${show['Job Name']}" processed successfully.`);
+  logFn('info', 'Job', `✓ Job ${jobNumber} "${show['Job Name']}" processed successfully.`);
 }
 
 // ─── Entry Point ──────────────────────────────────────────────────────────────
@@ -351,26 +384,32 @@ async function main() {
   console.log(`Lasso URL: ${config.baseUrl}`);
   console.log('');
 
-  // Phase A – Parallel reference data lookups
+  // Parse CSV
+  const { show, calls } = parseCSV(csvPath);
+  console.log(`Parsed CSV: job "${show['Job Name']}" with ${calls.length} call group(s)\n`);
+
+  // Resolve all lookups via the exported helper
   console.log('Fetching reference data from Lasso...');
+  const lookups = await resolveImportLookups(show);
+  console.log(`  Airport code resolved: ${lookups.airportCode}`);
+
+  await importShow(show, calls, lookups, log);
+}
+
+// ─── Exports (for Nuxt server routes) ───────────────────────────────────────
+
+/**
+ * Fetches all Lasso reference data needed by importShow and resolves lookup IDs
+ * for the given show row. Call this once per job before calling importShow.
+ */
+async function resolveImportLookups(show) {
   const [accountUserRoles, markets, accountEventStatuses, airports] = await Promise.all([
     api.getAccountUserRoles(),
     api.getMarkets(),
     api.getAccountEventStatuses(),
     api.getAirports(),
   ]);
-  console.log(
-    `  Found: ${accountUserRoles.length} user roles, ` +
-    `${markets.length} markets, ` +
-    `${accountEventStatuses.length} event statuses, ` +
-    `${airports.length} airports`
-  );
 
-  // Parse CSV
-  const { show, calls } = parseCSV(csvPath);
-  console.log(`\nParsed CSV: job "${show['Job Name']}" with ${calls.length} call group(s)`);
-
-  // Resolve market
   const marketStr = show["Job's Market"];
   const { city: marketCity } = parseMarket(marketStr);
   const market = markets.find(m =>
@@ -378,13 +417,10 @@ async function main() {
     (m.name && m.name.toLowerCase().includes(marketCity.toLowerCase()))
   );
   const marketId = market ? market.id : null;
-  if (!marketId) console.warn(`[WARN] Market not found in Lasso for: "${marketStr}" — market will not be linked`);
+  if (!marketId) console.warn(`[WARN] Market not found in Lasso for: "${marketStr}"`);
 
-  // Resolve airport code
   const airportCode = await resolveAirportCode(marketStr, airports);
-  console.log(`  Airport code resolved: ${airportCode}`);
 
-  // Resolve account_event_status
   const statusLabel = show['Job Confirmation Status'];
   const mappedSlug = config.mapping.eventStatusMapping[statusLabel] || statusLabel.toLowerCase();
   const status = accountEventStatuses.find(
@@ -398,22 +434,26 @@ async function main() {
     );
   }
 
-  const lookups = {
+  return {
     accountUserRoles,
     airportCode,
     marketId,
     statusId: status.id,
   };
-
-  await importShow(show, calls, lookups);
 }
 
-main().catch(err => {
-  console.error('\n[ERROR]', err.message);
-  if (err.response) {
-    const detail = err.response.data;
-    console.error('API status :', err.response.status);
-    console.error('API response:', JSON.stringify(detail, null, 2));
-  }
-  process.exit(1);
-});
+module.exports = { importShow, resolveImportLookups };
+
+// ─── CLI Entry Point ──────────────────────────────────────────────────────────
+
+if (require.main === module) {
+  main().catch(err => {
+    console.error('\n[ERROR]', err.message);
+    if (err.response) {
+      const detail = err.response.data;
+      console.error('API status :', err.response.status);
+      console.error('API response:', JSON.stringify(detail, null, 2));
+    }
+    process.exit(1);
+  });
+}

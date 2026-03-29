@@ -61,6 +61,10 @@ async function updateClientNote(id, data) {
   return res.data;
 }
 
+async function getClientNotes(clientId) {
+  return getAll('/client_notes', { client: clientId });
+}
+
 // ─── Venues ───────────────────────────────────────────────────────────────────
 
 async function findVenueByName(name) {
@@ -98,6 +102,10 @@ async function updateVenueNote(id, data) {
   return res.data;
 }
 
+async function getVenueNotes(venueId) {
+  return getAll('/venue_notes', { venue: venueId });
+}
+
 // ─── Events ───────────────────────────────────────────────────────────────────
 
 async function findEventByExternalCode(externalCode) {
@@ -125,6 +133,10 @@ async function createEventNote(data) {
 async function updateEventNote(id, data) {
   const res = await lassoClient.patch(`/event_notes/${id}`, data);
   return res.data;
+}
+
+async function getEventNotes(eventId) {
+  return getAll('/event_notes', { event: eventId });
 }
 
 // ─── Event Account User Role Relationships ────────────────────────────────────
@@ -222,6 +234,7 @@ module.exports = {
   updateClientContact,
   createClientNote,
   updateClientNote,
+  getClientNotes,
   findVenueByName,
   createVenue,
   updateVenue,
@@ -229,11 +242,13 @@ module.exports = {
   updateVenueRoom,
   createVenueNote,
   updateVenueNote,
+  getVenueNotes,
   findEventByExternalCode,
   createEvent,
   updateEvent,
   createEventNote,
   updateEventNote,
+  getEventNotes,
   getEventAccountUserRoleRelationships,
   createEventAccountUserRoleRelationship,
   getEventGroups,
