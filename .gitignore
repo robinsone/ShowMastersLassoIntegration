@@ -18,3 +18,9 @@ Thumbs.db
 .nuxt/
 .output/
 
+.nuxt/types/imports.d.ts
+.nuxt/nuxt.d.ts
+.nuxt/nitro.json
+.nuxt/manifest/meta/dev.json
+.nuxt/manifest/latest.json
+.nuxt/imports.d.ts
