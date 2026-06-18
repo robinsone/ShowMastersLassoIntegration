@@ -6,27 +6,27 @@ type Decorate<T extends Record<string, any>> = { [K in keyof T as K extends stri
 type InjectionType<A extends Plugin> = A extends {default: Plugin<infer T>} ? Decorate<T> : unknown
 
 type NuxtAppInjections = 
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/revive-payload.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/head/runtime/plugins/unhead.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/pages/runtime/plugins/router.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/browser-devtools-timing.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/dev-server-logs.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/navigation-repaint.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/check-outdated-build.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/revive-payload.server.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/chunk-reload.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/pages/runtime/plugins/prefetch.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/pages/runtime/plugins/check-if-page-unused.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+devtools@3.2.4_vite@7_32568f68619270f51a5480d6db4532d9/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.server.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+devtools@3.2.4_vite@7_32568f68619270f51a5480d6db4532d9/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/revive-payload.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/head/runtime/plugins/unhead.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/pages/runtime/plugins/router.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/browser-devtools-timing.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/dev-server-logs.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/navigation-repaint.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/check-outdated-build.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/revive-payload.server.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/chunk-reload.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/pages/runtime/plugins/prefetch.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/pages/runtime/plugins/check-if-page-unused.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+devtools@3.2.4_vite@7_6253c682d6b48226482f9ebe4240800c/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.server.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+devtools@3.2.4_vite@7_6253c682d6b48226482f9ebe4240800c/node_modules/@nuxt/devtools/dist/runtime/plugins/devtools.client.js")> &
   InjectionType<typeof import("../pwa-icons-plugin")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+ui@3.3.7_@babel+parse_65ead97122e5bb28d10097a649065fd3/node_modules/@nuxt/ui/dist/runtime/plugins/colors.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@nuxtjs+color-mode@3.5.2_magicast@0.5.2/node_modules/@nuxtjs/color-mode/dist/runtime/plugin.server.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@nuxtjs+color-mode@3.5.2_magicast@0.5.2/node_modules/@nuxtjs/color-mode/dist/runtime/plugin.client.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+icon@1.15.0_magicast@_09d31eb1e2817b6d04046960b1974573/node_modules/@nuxt/icon/dist/runtime/plugin.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/warn.dev.server.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@3.21.2_@emnapi+core@1._caef1748b471d1d8717a53a7e69e565a/node_modules/nuxt/dist/app/plugins/check-if-layout-used.js")> &
-  InjectionType<typeof import("../../node_modules/.pnpm/@vite-pwa+nuxt@1.1.1_magica_98e20f3cbfe757a5a9facf20e0b790c2/node_modules/@vite-pwa/nuxt/dist/runtime/plugins/pwa.client.js")>
+  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+ui@3.3.7_@babel+parse_c8da666559c31514fced53af892afb89/node_modules/@nuxt/ui/dist/runtime/plugins/colors.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/@nuxtjs+color-mode@3.5.2_magicast@0.5.3/node_modules/@nuxtjs/color-mode/dist/runtime/plugin.server.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/@nuxtjs+color-mode@3.5.2_magicast@0.5.3/node_modules/@nuxtjs/color-mode/dist/runtime/plugin.client.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/@nuxt+icon@1.15.0_magicast@_34111732760386e9e9355d8fde7f9944/node_modules/@nuxt/icon/dist/runtime/plugin.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/warn.dev.server.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/nuxt@4.4.8_@babel+plugin-sy_efad5f1228691a0ec928a6ff94e0dfa3/node_modules/nuxt/dist/app/plugins/check-if-layout-used.js")> &
+  InjectionType<typeof import("../../node_modules/.pnpm/@vite-pwa+nuxt@1.1.1_magica_86dfd2bcf135f0a0937a6975057a6916/node_modules/@vite-pwa/nuxt/dist/runtime/plugins/pwa.client.js")>
 
 declare module '#app' {
   interface NuxtApp extends NuxtAppInjections { }

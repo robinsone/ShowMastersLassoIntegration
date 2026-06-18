@@ -101,13 +101,6 @@ export function buildEventGroupPayload(call: { date: string; callType: string },
   }
 }
 
-// ─── Positions ────────────────────────────────────────────────────────────────
-
-export function buildPositionPayload(title: string) {
-  const shortName = title.replace(/\s+/g, '-').toUpperCase().substring(0, 20)
-  return { name: title, short_name: shortName }
-}
-
 // ─── Event Positions ──────────────────────────────────────────────────────────
 
 export function buildEventPositionPayload(

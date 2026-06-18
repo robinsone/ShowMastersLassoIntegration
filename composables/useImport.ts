@@ -1,7 +1,7 @@
 import type { ParsedJob, LogEntry } from '../types/index'
 import { validateJobs, type ValidationError } from '../utils/validate'
 import { parseCSVContent } from '../utils/csvParser'
-import { resolveImportLookups, importShow, preloadPositionCache } from '../utils/importer'
+import { resolveImportLookups, importShow } from '../utils/importer'
 
 /**
  * Central composable that manages the full import flow state.
@@ -54,18 +54,10 @@ export const useImport = () => {
     const { getDivisionId } = useConfig()
     const divisionId = getDivisionId()
     const noteCache = new Map<string, number>()
-    const positionCache = new Map<string, number>()
 
     const push = (entry: LogEntry) => { logs.value.push(entry) }
 
     try {
-      // Pre-load all positions into cache once, avoiding slow per-position
-      // API lookups during import (each can take 40+ seconds).
-      const preloadLogFn = (action: string, entity: string, name: string) => {
-        push({ type: 'log', action, entity, name })
-      }
-      await preloadPositionCache(positionCache, preloadLogFn)
-
       for (let i = 0; i < jobs.value.length; i++) {
         const { show, calls } = jobs.value[i]
 
@@ -82,7 +74,7 @@ export const useImport = () => {
           push({ type: 'log', action, entity, name })
         }
 
-        await importShow(show, calls, lookups, divisionId, logFn, noteCache, positionCache)
+        await importShow(show, calls, lookups, divisionId, logFn, noteCache)
 
         push({ type: 'job_done', jobIndex: i, jobNumber: show['Job Number'] })
       }

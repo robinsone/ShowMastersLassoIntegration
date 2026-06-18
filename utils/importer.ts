@@ -7,7 +7,6 @@ import {
   buildEventPayload,
   buildEventNotePayloads,
   buildEventGroupPayload,
-  buildPositionPayload,
   buildEventPositionPayload,
   buildScheduleEntryPayload,
   type ShowRow,
@@ -163,53 +162,23 @@ async function upsertVenue(show: ShowRow, airportCode: string | null, marketId: 
   return created.id
 }
 
-async function upsertPosition(title: string, logFn: LogFn, positionCache: Map<string, number>): Promise<number> {
-  const cacheKey = `pos_${title.toLowerCase()}`
-  const cached = positionCache.get(cacheKey)
-  if (cached !== undefined) {
-    logFn('unchanged', 'Position', `${title} (cached)`)
-    return cached
-  }
-
-  const payload = buildPositionPayload(title)
+async function getPosition(title: string, logFn: LogFn): Promise<number> {
   const existing = await api.findPositionByName(title)
 
-  if (existing) {
-    const changes = computeDiff(payload, existing)
-    if (changes) {
-      await api.updatePosition(existing.id, changes)
-      logFn('updated', 'Position', title)
-    } else {
-      logFn('unchanged', 'Position', title)
-    }
-    positionCache.set(cacheKey, existing.id)
-    return existing.id
+  if (!existing) {
+    throw new Error(
+      `Position "${title}" not found in Lasso. ` +
+      `Positions must be created in the Lasso database before importing events.`
+    )
   }
 
-  const created = await api.createPosition(payload)
-  logFn('created', 'Position', title)
-  positionCache.set(cacheKey, created.id)
-  return created.id
+  logFn('found', 'Position', title)
+  return existing.id
 }
 
 // ─── Main: Import One Show ────────────────────────────────────────────────────
 
-/**
- * Pre-load every position from the Lasso account into the cache.
- * Called once before the import loop so individual `upsertPosition` calls
- * never need to hit `/positions?name=…` (which can be very slow when the
- * name filter is ignored by the API on a miss).
- */
-export async function preloadPositionCache(
-  positionCache: Map<string, number>,
-  logFn: LogFn
-): Promise<void> {
-  const allPositions = await api.getAllPositions()
-  for (const p of allPositions) {
-    positionCache.set(`pos_${p.name.toLowerCase()}`, p.id)
-  }
-  logFn('info', 'Position', `Pre-loaded ${allPositions.length} positions into cache`)
-}
+
 
 export async function importShow(
   show: ShowRow,
@@ -217,8 +186,7 @@ export async function importShow(
   lookups: ImportLookups,
   divisionId: number,
   logFn: LogFn,
-  noteCache: Map<string, number> = new Map(),
-  positionCache: Map<string, number> = new Map()
+  noteCache: Map<string, number> = new Map()
 ): Promise<void> {
   const jobNumber = String(show['Job Number'])
 
@@ -407,7 +375,7 @@ export async function importShow(
     }
 
     for (const positionEntry of call.positions) {
-      const positionId = await upsertPosition(positionEntry.title, logFn, positionCache)
+      const positionId = await getPosition(positionEntry.title, logFn)
       const epPayload = buildEventPositionPayload(call, positionEntry, eventId, groupId, positionId)
       let eventPositionId: number
       let epJustCreated = false
