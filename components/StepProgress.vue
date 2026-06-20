@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LogEntry } from '../types/index'
 
-const { logs, isImporting, importError, jobs, completedJobs } = useImport()
+const { logs, isImporting, importError, jobs, completedJobs, goBack } = useImport()
 
 const logContainer = ref<HTMLElement | null>(null)
 
@@ -63,41 +63,31 @@ function formatEntry(entry: LogEntry): string {
   <div class="flex flex-col px-4 sm:px-6 py-6">
     <div class="max-w-3xl mx-auto w-full space-y-6">
       <!-- Header -->
-      <div class="space-y-1">
-        <h1 class="text-xl font-bold text-highlighted">Importing…</h1>
-        <p class="text-sm text-muted">
-          {{ completedJobs }} of {{ jobs.length }} job{{ jobs.length !== 1 ? 's' : '' }} complete
-        </p>
+      <div class="flex items-start justify-between space-y-1">
+        <div>
+          <h1 class="text-xl font-bold text-highlighted">Importing…</h1>
+          <p class="text-sm text-muted">
+            {{ completedJobs }} of {{ jobs.length }} job{{ jobs.length !== 1 ? 's' : '' }} complete
+          </p>
+        </div>
+        <div class="shrink-0">
+          <UButton v-if="importError" label="Back" icon="i-lucide-arrow-left" color="neutral" variant="ghost" size="sm"
+            :disabled="isImporting" @click="goBack" />
+        </div>
       </div>
 
       <!-- Progress bar -->
-      <UProgress
-        :value="progressPercent"
-        :color="importError ? 'error' : 'primary'"
-        class="w-full"
-      />
+      <UProgress :value="progressPercent" :color="importError ? 'error' : 'primary'" class="w-full" />
 
       <!-- Error banner -->
-      <UAlert
-        v-if="importError"
-        color="error"
-        variant="soft"
-        icon="i-lucide-circle-x"
-        title="Import failed"
-        :description="importError"
-      />
+      <UAlert v-if="importError" color="error" variant="soft" icon="i-lucide-circle-x" title="Import failed"
+        :description="importError" />
 
       <!-- Scrollable log -->
-      <div
-        ref="logContainer"
-        class="bg-[#0d1117] dark:bg-[#0d1117] rounded-xl border border-default font-mono text-xs leading-5 p-4 h-[60vh] overflow-y-auto"
-      >
-        <div
-          v-for="(entry, idx) in logs"
-          :key="idx"
-          :class="entryClass(entry)"
-          class="whitespace-pre-wrap break-all"
-        >{{ formatEntry(entry) }}</div>
+      <div ref="logContainer"
+        class="bg-[#0d1117] dark:bg-[#0d1117] rounded-xl border border-default font-mono text-xs leading-5 p-4 h-[60vh] overflow-y-auto">
+        <div v-for="(entry, idx) in logs" :key="idx" :class="entryClass(entry)" class="whitespace-pre-wrap break-all">{{
+          formatEntry(entry) }}</div>
 
         <div v-if="isImporting" class="text-muted mt-2 animate-pulse">
           Processing…

@@ -20,7 +20,7 @@ const SHOW_FIELDS: Array<{ key: string; label: string; required?: boolean }> = [
   { key: 'SMPL General Manager Name', label: 'SMPL GM' },
 ]
 
-const { jobs, validationErrors, startImport, reset } = useImport()
+const { jobs, validationErrors, startImport, goBack } = useImport()
 
 const activeJobIdx = ref(0)
 const activeJob = computed(() => jobs.value[activeJobIdx.value])
@@ -78,7 +78,7 @@ function callBorderClass(type: string): string {
         {{ validationErrors.length }} issue{{ validationErrors.length !== 1 ? 's' : '' }} — fix before importing
       </div>
       <div class="flex gap-2 shrink-0">
-        <UButton label="Back" icon="i-lucide-arrow-left" color="neutral" variant="ghost" size="sm" @click="reset" />
+        <UButton label="Back" icon="i-lucide-arrow-left" color="neutral" variant="ghost" size="sm" @click="goBack" />
         <UButton label="Start Import" icon="i-lucide-play" size="sm" :disabled="hasErrors" @click="startImport" />
       </div>
     </div>

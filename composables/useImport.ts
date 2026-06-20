@@ -101,6 +101,24 @@ export const useImport = () => {
     validationErrors.value = []
   }
 
+  // Navigate to the previous logical step without clearing job data.
+  function goBack() {
+    if (step.value === 'progress') {
+      step.value = 'review'
+      return
+    }
+    if (step.value === 'review') {
+      step.value = 'upload'
+      return
+    }
+    if (step.value === 'complete') {
+      step.value = 'review'
+      return
+    }
+    // default: stay or reset to upload
+    step.value = 'upload'
+  }
+
   return {
     step,
     jobs,
@@ -114,5 +132,6 @@ export const useImport = () => {
     uploadAndParse,
     startImport,
     reset,
+    goBack,
   }
 }
