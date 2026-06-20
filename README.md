@@ -1,54 +1,93 @@
 # ShowMasters → Lasso Integration
 
-A Node.js command-line utility that reads job data from a ShowMasters CSV export and upserts it into the [Lasso Workforce](https://www.lasso.io/) API.
+A web app for importing ShowMasters CSV exports into the [Lasso Workforce](https://www.lasso.io/) API.
 
-## What it does
+The app guides you through four steps:
 
-Given a CSV file (default: `data/SimpleData.csv`), the tool creates or updates the following records in Lasso for each job row:
+1. Upload a ShowMasters CSV file.
+2. Review and edit the parsed jobs.
+3. Run the import into Lasso.
+4. Confirm completion and review the log.
 
-- **Client** — matched by name; contact info attached
-- **Venue** — matched by name; address, airport, and notes applied
-- **Event** — named by Job Number; linked to client, venue, division, and dates
-- **Event Notes** — booking staff notes, crew notes, onsite contact, logistics, payment details
-- **Event Groups** — one per call type/date combination (e.g. LOAD IN, LOAD OUT)
-- **Positions** — looked up or created by title (import_name)
-- **Event Positions** — one per position per group, with quantity and schedule times
-- **Schedule Entries** — one per event position, matching the call date and times
+## What it imports
 
-All operations are **idempotent** — running the tool multiple times on the same data will not create duplicates. Records are matched via `external_code` keys derived from the job number, and changes are only written when a value has actually changed.
+For each job in the CSV, the app creates or updates the corresponding Lasso records:
 
-## Setup
+- **Client** - matched by name; contact info attached
+- **Venue** - matched by name; address, airport, and notes applied
+- **Event** - named by Job Number; linked to client, venue, division, and dates
+- **Event Notes** - booking staff notes, crew notes, onsite contact, logistics, payment details
+- **Event Groups** - one per call type/date combination, such as LOAD IN or LOAD OUT
+- **Event Positions** - one per position per group, with quantity and schedule times
+- **Schedule Entries** - one per event position, matching the call date and times
 
-```
-npm install
+The import is idempotent. Running it again on the same data updates only what changed and avoids creating duplicates.
+
+## Prerequisites
+
+- Node.js 22 or newer
+- `pnpm`
+- Lasso API access
+
+## First-time setup
+
+Create a local `.env` file from the example file and fill in your Lasso settings:
+
+```bash
 cp .env.example .env
-# Fill in LASSO_API_KEY, LASSO_BASE_URL, and DIVISION_ID in .env
 ```
 
-## Usage
+Set the following values in `.env`:
 
+- `LASSO_API_KEY`
+- `LASSO_BASE_URL`
+- `DIVISION_ID`
+
+## Run the app locally
+
+Install dependencies and start the dev server:
+
+```bash
+pnpm install
+pnpm dev
 ```
-node src/index.js                        # uses data/SimpleData.csv
-node src/index.js path/to/custom.csv     # use a different CSV file
-```
 
-### One-time position seed
+Open the local URL shown in the terminal, usually `http://localhost:3000`.
 
-To pre-populate Lasso with positions from `data/Positions.csv`:
+## How to use the app
 
-```
-node scripts/seedPositions.js
-```
+### 1. Configure Lasso credentials
 
-## Output legend
+The first time you open the app, it shows a credentials screen. Enter the Lasso API information there so the app can talk to your sandbox or production instance.
 
-| Symbol | Meaning |
-|--------|---------|
-| `[+]`  | Record created |
-| `[~]`  | Record updated (field changed) |
-| `[=]`  | Record unchanged |
-| `[WARN]` | Non-fatal warning (e.g. user role not found) |
+### 2. Upload a CSV file
 
-## CSV format
+Use the upload step to choose a ShowMasters export. If you do not select a file, the app will keep using its default sample data only as a reference during development.
 
-The input CSV must follow the ShowMasters export format with a `DATA` column. The first data row starts with `VALUE` and contains all job-level fields. Continuation rows contain only the call group columns (Date, Start Time, End Time, Call Type, Position Title, Position Quantity per Title). Blank rows between groups are ignored.
+### 3. Review and edit parsed jobs
+
+After upload, the app shows a review screen. Use this step to:
+
+- inspect the parsed jobs
+- fix any fields before importing
+- add or remove calls and positions if needed
+
+If you need to go back, use the Back button. That keeps the parsed data in place so you can continue editing.
+
+### 4. Start the import
+
+When the review looks correct, choose Start Import. The progress screen shows:
+
+- which job is currently being processed
+- a running log of created, updated, and skipped records
+- any import errors that need attention
+
+If an error occurs, you can go back to review the data and try again.
+
+### 5. Finish and repeat
+
+Once the import completes, you can upload another CSV or reset the workflow to start over.
+
+## Troubleshooting
+
+- If a CSV does not parse correctly, make sure it matches the ShowMasters export structure.
