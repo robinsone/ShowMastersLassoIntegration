@@ -1,5 +1,6 @@
 export interface ParsedPosition {
   title: string
+  label: string
   quantity: number
   startTime: string
   endTime: string

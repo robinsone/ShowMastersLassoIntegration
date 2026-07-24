@@ -38,7 +38,7 @@ function jobSubLabel(job: ParsedJob) {
 }
 
 function addPosition(call: ParsedCall) {
-  call.positions.push({ title: '', quantity: 1, startTime: call.startTime, endTime: call.endTime })
+  call.positions.push({ title: '', label: '', quantity: 1, startTime: call.startTime, endTime: call.endTime })
 }
 function removePosition(call: ParsedCall, posIdx: number) {
   call.positions.splice(posIdx, 1)
@@ -185,6 +185,9 @@ function callBorderClass(type: string): string {
                           <th class="text-left px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide">
                             Position Title
                           </th>
+                          <th class="text-left px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Position Label
+                          </th>
                           <th
                             class="text-center px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide w-20">
                             Qty</th>
@@ -205,6 +208,10 @@ function callBorderClass(type: string): string {
                               size="sm" placeholder="e.g. HAND – LIGHTING" class="w-full" />
                           </td>
                           <td class="px-2 py-1">
+                            <UInput v-model="jobs[activeJobIdx].calls[callIdx].positions[posIdx].label" variant="ghost"
+                              size="sm" placeholder="e.g. TEST" class="w-full" />
+                          </td>
+                          <td class="px-2 py-1">
                             <UInput v-model.number="jobs[activeJobIdx].calls[callIdx].positions[posIdx].quantity"
                               type="number" min="1" variant="ghost" size="sm" class="w-full text-center" />
                           </td>
@@ -223,12 +230,12 @@ function callBorderClass(type: string): string {
                           </td>
                         </tr>
                         <tr v-if="!call.positions.length">
-                          <td colspan="5" class="px-3 py-2 text-sm text-muted text-center italic">No positions</td>
+                          <td colspan="6" class="px-3 py-2 text-sm text-muted text-center italic">No positions</td>
                         </tr>
                       </tbody>
                       <tfoot>
                         <tr class="border-t border-default">
-                          <td colspan="5" class="px-3 py-1.5">
+                          <td colspan="6" class="px-3 py-1.5">
                             <UButton label="Add position" icon="i-lucide-plus" color="neutral" variant="ghost" size="xs"
                               @click="addPosition(call)" />
                           </td>

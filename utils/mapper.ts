@@ -105,7 +105,7 @@ export function buildEventGroupPayload(call: { date: string; callType: string },
 
 export function buildEventPositionPayload(
   call: { date: string },
-  positionEntry: { quantity: number; startTime: string; endTime: string },
+  positionEntry: { quantity: number; label: string; startTime: string; endTime: string },
   eventId: number,
   groupId: number,
   positionId: number
@@ -116,6 +116,7 @@ export function buildEventPositionPayload(
     group: groupId,
     position: positionId,
     quantity: positionEntry.quantity,
+    label: positionEntry.label || null,
     rate_setting: mappingConfig.rateSettingDefault,
     schedule_begin: isoDate,
     schedule_end: isoDate,

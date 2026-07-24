@@ -3,6 +3,16 @@ import type { ParsedJob, ParsedCall } from '../types/index'
 
 interface RawRow extends Record<string, string> { }
 
+export function parsePositionTitle(value: string): { title: string; label: string } {
+  const match = value.trim().match(/^(.*?)(?:\s+<([^<>]+)>)$/)
+  if (!match) return { title: value.trim(), label: '' }
+
+  return {
+    title: match[1].trim(),
+    label: match[2].trim(),
+  }
+}
+
 function groupIntoCalls(rows: RawRow[]): ParsedCall[] {
   const groups = new Map<string, ParsedCall>()
 
@@ -25,8 +35,9 @@ function groupIntoCalls(rows: RawRow[]): ParsedCall[] {
     }
 
     const qty = parseInt(row['Position Quantity per Title'], 10)
+    const position = parsePositionTitle(row['Position Title'])
     groups.get(key)!.positions.push({
-      title: row['Position Title'],
+      ...position,
       quantity: isNaN(qty) ? 1 : qty,
       startTime: row['Start Time'],
       endTime: row['End Time'],
