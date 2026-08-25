@@ -41,6 +41,7 @@ function groupIntoCalls(rows: RawRow[]): ParsedCall[] {
       quantity: isNaN(qty) ? 1 : qty,
       startTime: row['Start Time'],
       endTime: row['End Time'],
+      dressCode: row['Dress Code'] ?? '',
     })
   }
 

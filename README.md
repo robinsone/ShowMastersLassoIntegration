@@ -18,7 +18,7 @@ For each job in the CSV, the app creates or updates the corresponding Lasso reco
 - **Event** - named by Job Number; linked to client, venue, division, and dates
 - **Event Notes** - booking staff notes, crew notes, onsite contact, logistics, payment details
 - **Event Groups** - one per call type/date combination, such as LOAD IN or LOAD OUT
-- **Event Positions** - one per position per group, with quantity and schedule times
+- **Event Positions** - one per position per group, with quantity, schedule times, and crew-visible dress-code notes
 - **Schedule Entries** - one per event position, matching the call date and times
 
 The import is idempotent. Running it again on the same data updates only what changed and avoids creating duplicates.
