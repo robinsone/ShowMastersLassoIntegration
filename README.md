@@ -56,6 +56,17 @@ pnpm dev
 
 Open the local URL shown in the terminal, usually `http://localhost:3000`.
 
+## Install the app
+
+The hosted app can be installed as a progressive web app in Chrome or Edge on desktop,
+and in Chrome on Android. Use the **Install app** button in the header. If the browser
+does not show a native install prompt yet, the button provides the browser-specific
+installation steps instead.
+
+Installed copies require an internet connection because every import communicates with
+Lasso. When offline, the app shows a reconnect screen and automatically becomes
+available again once connectivity returns.
+
 ## How to use the app
 
 ### 1. Configure Lasso credentials
