@@ -13,7 +13,7 @@ import {
   type ShowRow,
 } from './mapper'
 import * as api from './lassoApi'
-import type { ParsedCall } from '../types/index'
+import type { ParsedCall, ParsedJob } from '../types/index'
 
 export type LogFn = (action: string, entity: string, name: string) => void
 
@@ -163,18 +163,69 @@ async function upsertVenue(show: ShowRow, airportCode: string | null, marketId: 
   return created.id
 }
 
-async function getPosition(title: string, logFn: LogFn): Promise<number> {
-  const existing = await api.findPositionByName(title)
+function normalizePositionTitle(title: string): string {
+  return title.trim().toLowerCase()
+}
 
-  if (!existing) {
+function positionIssueContext(job: ParsedJob, call: ParsedCall): string {
+  return `Job ${job.show['Job Number']} "${job.show['Job Name']}", ${call.callType} on ${call.date}`
+}
+
+export function resolvePositionIds(
+  jobs: ParsedJob[],
+  lassoPositions: Array<{ id: number; name?: string | null }>
+): Map<string, number> {
+  const idsByTitle = new Map<string, number[]>()
+
+  for (const position of lassoPositions) {
+    if (!position.name?.trim()) continue
+
+    const title = normalizePositionTitle(position.name)
+    const ids = idsByTitle.get(title) ?? []
+    ids.push(position.id)
+    idsByTitle.set(title, ids)
+  }
+
+  const positionIds = new Map<string, number>()
+  const issues: string[] = []
+
+  for (const job of jobs) {
+    for (const call of job.calls) {
+      for (const positionEntry of call.positions) {
+        const title = positionEntry.title.trim()
+        const ids = idsByTitle.get(normalizePositionTitle(title))
+        const context = positionIssueContext(job, call)
+
+        if (!ids?.length) {
+          issues.push(`Position "${title}" was not found in Lasso (${context}). Create it in Lasso, then retry.`)
+          continue
+        }
+
+        if (ids.length > 1) {
+          issues.push(`Position "${title}" is ambiguous in Lasso (${context}). Disambiguate the duplicate Lasso positions, then retry.`)
+          continue
+        }
+
+        positionIds.set(normalizePositionTitle(title), ids[0])
+      }
+    }
+  }
+
+  if (issues.length) {
     throw new Error(
-      `Position "${title}" not found in Lasso. ` +
-      `Positions must be created in the Lasso database before importing events.`
+      `Position preflight failed. Correct the following Lasso positions, then retry:\n\n${issues.map(issue => `- ${issue}`).join('\n')}`
     )
   }
 
-  logFn('found', 'Position', title)
-  return existing.id
+  return positionIds
+}
+
+function getPositionId(title: string, positionIds: Map<string, number>): number {
+  const positionId = positionIds.get(normalizePositionTitle(title))
+  if (positionId === undefined) {
+    throw new Error(`Position "${title}" was not resolved during import preflight.`)
+  }
+  return positionId
 }
 
 // ─── Main: Import One Show ────────────────────────────────────────────────────
@@ -186,6 +237,7 @@ export async function importShow(
   calls: ParsedCall[],
   lookups: ImportLookups,
   divisionId: number,
+  positionIds: Map<string, number>,
   logFn: LogFn,
   noteCache: Map<string, number> = new Map()
 ): Promise<void> {
@@ -393,7 +445,7 @@ export async function importShow(
     }
 
     for (const positionEntry of call.positions) {
-      const positionId = await getPosition(positionEntry.title, logFn)
+      const positionId = getPositionId(positionEntry.title, positionIds)
       let eventPositionId: number
       let epJustCreated = false
       const externalCode = `EP-${eventId}-${groupId}-${positionId}`

@@ -28,6 +28,8 @@ The import is idempotent. Running it again on the same data updates only what ch
 - Node.js 22 or newer
 - `pnpm`
 - Lasso API access
+- Every position named in the CSV must already exist in Lasso. The importer matches
+  position titles case-insensitively after trimming surrounding whitespace.
 
 ## First-time setup
 
@@ -84,6 +86,10 @@ When the review looks correct, choose Start Import. The progress screen shows:
 
 If an error occurs, you can go back to review the data and try again.
 
+Before creating or updating any records, the importer loads Lasso positions once and
+preflights every position in the CSV. Missing or duplicate position names stop the
+import and list each affected job and call so the positions can be corrected in Lasso.
+
 ### 5. Finish and repeat
 
 Once the import completes, you can upload another CSV or reset the workflow to start over.
@@ -91,3 +97,5 @@ Once the import completes, you can upload another CSV or reset the workflow to s
 ## Troubleshooting
 
 - If a CSV does not parse correctly, make sure it matches the ShowMasters export structure.
+- If position preflight fails, create the missing position in Lasso or remove duplicate
+  Lasso positions with the same name, then retry the import.

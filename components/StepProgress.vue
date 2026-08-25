@@ -80,8 +80,11 @@ function formatEntry(entry: LogEntry): string {
       <UProgress :value="progressPercent" :color="importError ? 'error' : 'primary'" class="w-full" />
 
       <!-- Error banner -->
-      <UAlert v-if="importError" color="error" variant="soft" icon="i-lucide-circle-x" title="Import failed"
-        :description="importError" />
+      <UAlert v-if="importError" color="error" variant="soft" icon="i-lucide-circle-x" title="Import failed">
+        <template #description>
+          <div class="whitespace-pre-wrap">{{ importError }}</div>
+        </template>
+      </UAlert>
 
       <!-- Scrollable log -->
       <div ref="logContainer"
