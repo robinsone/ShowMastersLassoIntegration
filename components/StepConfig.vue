@@ -85,8 +85,8 @@ function onSubmit() {
         color="info"
         variant="soft"
         icon="i-lucide-info"
-        title="CORS requirement"
-        description="Your browser must be able to reach the Lasso API directly. The Lasso API server must allow cross-origin requests from this page's domain."
+        title="Connection note"
+        description="The app sends Lasso requests through its connection service, so browser CORS settings are not required."
       />
     </div>
   </div>

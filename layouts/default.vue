@@ -32,6 +32,12 @@ onMounted(() => {
 })
 
 const showConfig = useState('show_config', () => false)
+const showGuide = ref(false)
+
+function openConnectionSettings() {
+  showGuide.value = false
+  showConfig.value = true
+}
 </script>
 
 <template>
@@ -53,7 +59,16 @@ const showConfig = useState('show_config', () => false)
             <UButton icon="i-lucide-download" color="primary" variant="soft" size="sm" aria-label="Install app"
               @click="installApp" />
           </UTooltip>
-          <UTooltip text="Lasso credentials">
+          <UButton
+            label="Help"
+            icon="i-lucide-circle-help"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="Open help"
+            @click="showGuide = true"
+          />
+          <UTooltip v-if="!showConfig" text="Lasso credentials">
             <UButton icon="i-lucide-settings" color="neutral" variant="ghost" size="sm"
               aria-label="Configure credentials" @click="showConfig = true" />
           </UTooltip>
@@ -84,5 +99,10 @@ const showConfig = useState('show_config', () => false)
     <main class="flex-1 flex flex-col">
       <slot />
     </main>
+
+    <UserGuide
+      v-model:open="showGuide"
+      @open-settings="openConnectionSettings"
+    />
   </div>
 </template>
