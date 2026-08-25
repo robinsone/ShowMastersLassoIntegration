@@ -21,7 +21,7 @@ function onDrop(e: DragEvent) {
     <div class="w-full max-w-lg space-y-6">
       <div class="text-center space-y-2">
         <h1 class="text-3xl font-bold text-highlighted">ShowMasters → Lasso</h1>
-        <p class="text-muted">Upload a ShowMasters SimpleData CSV to import jobs into Lasso.</p>
+        <p class="text-muted">Upload a ShowMasters CSV to import jobs into Lasso.</p>
       </div>
 
       <!-- Drop zone -->
@@ -36,7 +36,7 @@ function onDrop(e: DragEvent) {
         <UIcon name="i-lucide-upload-cloud" class="size-12 text-muted" />
         <div class="text-center">
           <p class="font-medium text-highlighted">Drop CSV here or click to browse</p>
-          <p class="text-sm text-muted mt-1">SimpleData.csv (one or more jobs)</p>
+          <p class="text-sm text-muted mt-1">ShowMasters.csv (one or more jobs)</p>
         </div>
         <UButton
           label="Select File"
