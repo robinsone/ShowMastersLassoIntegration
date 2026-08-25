@@ -4,6 +4,7 @@ export interface ParsedPosition {
   quantity: number
   startTime: string
   endTime: string
+  dressCode: string
 }
 
 export interface ParsedCall {

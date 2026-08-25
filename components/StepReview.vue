@@ -38,13 +38,26 @@ function jobSubLabel(job: ParsedJob) {
 }
 
 function addPosition(call: ParsedCall) {
-  call.positions.push({ title: '', label: '', quantity: 1, startTime: call.startTime, endTime: call.endTime })
+  call.positions.push({
+    title: '',
+    label: '',
+    quantity: 1,
+    startTime: call.startTime,
+    endTime: call.endTime,
+    dressCode: '',
+  })
 }
 function removePosition(call: ParsedCall, posIdx: number) {
   call.positions.splice(posIdx, 1)
 }
 function addCall(job: ParsedJob) {
-  job.calls.push({ date: '', startTime: '', endTime: '', callType: '', positions: [{ title: '', quantity: 1, startTime: '', endTime: '' }] })
+  job.calls.push({
+    date: '',
+    startTime: '',
+    endTime: '',
+    callType: '',
+    positions: [{ title: '', label: '', quantity: 1, startTime: '', endTime: '', dressCode: '' }],
+  })
 }
 function removeCall(job: ParsedJob, callIdx: number) {
   job.calls.splice(callIdx, 1)
@@ -179,7 +192,7 @@ function callBorderClass(type: string): string {
 
                   <!-- Positions table -->
                   <div class="sm:ml-6 rounded-lg border border-default overflow-x-auto">
-                    <table class="w-full min-w-[320px] text-sm">
+                    <table class="w-full min-w-[440px] text-sm">
                       <thead>
                         <tr class="border-b border-default bg-elevated">
                           <th class="text-left px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide">
@@ -197,6 +210,9 @@ function callBorderClass(type: string): string {
                           <th
                             class="text-center px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide w-24">
                             End</th>
+                          <th class="text-left px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Dress Code
+                          </th>
                           <th class="w-10" />
                         </tr>
                       </thead>
@@ -223,6 +239,10 @@ function callBorderClass(type: string): string {
                             <UInput v-model="jobs[activeJobIdx].calls[callIdx].positions[posIdx].endTime"
                               variant="ghost" size="sm" placeholder="End" class="w-full" />
                           </td>
+                          <td class="px-2 py-1">
+                            <UInput v-model="jobs[activeJobIdx].calls[callIdx].positions[posIdx].dressCode"
+                              variant="ghost" size="sm" placeholder="e.g. Black attire" class="w-full" />
+                          </td>
                           <td class="px-1 py-1 text-center">
                             <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs"
                               class="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -230,12 +250,12 @@ function callBorderClass(type: string): string {
                           </td>
                         </tr>
                         <tr v-if="!call.positions.length">
-                          <td colspan="6" class="px-3 py-2 text-sm text-muted text-center italic">No positions</td>
+                          <td colspan="7" class="px-3 py-2 text-sm text-muted text-center italic">No positions</td>
                         </tr>
                       </tbody>
                       <tfoot>
                         <tr class="border-t border-default">
-                          <td colspan="6" class="px-3 py-1.5">
+                          <td colspan="7" class="px-3 py-1.5">
                             <UButton label="Add position" icon="i-lucide-plus" color="neutral" variant="ghost" size="xs"
                               @click="addPosition(call)" />
                           </td>

@@ -6,6 +6,7 @@ import {
   buildVenuePayload,
   buildEventPayload,
   buildEventNotePayloads,
+  buildLogisticsNoteBody,
   buildEventGroupPayload,
   buildEventPositionPayload,
   buildScheduleEntryPayload,
@@ -320,6 +321,23 @@ export async function importShow(
     }
   }
 
+  const existingLogisticsNote = embeddedEventNotes.find((n: any) => n.subject === 'Logistics')
+  const logisticsBody = buildLogisticsNoteBody(show, existingLogisticsNote?.body)
+  if (existingLogisticsNote) {
+    if (!logisticsBody) {
+      await api.deleteEventNote(existingLogisticsNote.id)
+      logFn('deleted', 'EventNote', 'Logistics')
+    } else if (existingLogisticsNote.body !== logisticsBody) {
+      await api.updateEventNote(existingLogisticsNote.id, { body: logisticsBody })
+      logFn('updated', 'EventNote', 'Logistics')
+    } else {
+      logFn('unchanged', 'EventNote', 'Logistics')
+    }
+  } else if (logisticsBody) {
+    await api.createEventNote({ event: eventId, subject: 'Logistics', body: logisticsBody })
+    logFn('created', 'EventNote', 'Logistics')
+  }
+
   const smplStaff = [
     { name: show['SMPL Salesperson Name'], email: show['SMPL Salesperson Email'] },
     { name: show['SMPL General Manager Name'], email: show['SMPL General Manager Email'] },
@@ -376,9 +394,20 @@ export async function importShow(
 
     for (const positionEntry of call.positions) {
       const positionId = await getPosition(positionEntry.title, logFn)
-      const epPayload = buildEventPositionPayload(call, positionEntry, eventId, groupId, positionId)
       let eventPositionId: number
       let epJustCreated = false
+      const externalCode = `EP-${eventId}-${groupId}-${positionId}`
+      const existingEP = isNewEvent
+        ? null
+        : eventPositionMap.get(externalCode) ?? null
+      const epPayload = buildEventPositionPayload(
+        call,
+        positionEntry,
+        eventId,
+        groupId,
+        positionId,
+        existingEP?.note
+      )
 
       if (isNewEvent) {
         // Event was just created — no event_positions can exist yet, skip the lookup
@@ -388,7 +417,6 @@ export async function importShow(
         epJustCreated = true
       } else {
         // Existing event — look up from the pre-seeded map (O(1), no API call).
-        const existingEP = eventPositionMap.get(epPayload.external_code as string) ?? null
         if (existingEP) {
           const changes = computeDiff(epPayload, existingEP)
           if (changes) {

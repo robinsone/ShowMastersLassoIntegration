@@ -3,6 +3,23 @@ import { mappingConfig } from './mappingConfig'
 
 export interface ShowRow extends Record<string, string> { }
 
+export function replaceManagedNoteLine(
+  existingNote: string | null | undefined,
+  label: string,
+  value: string | null | undefined
+): string | null {
+  const linePattern = new RegExp(`^\\s*${label}:.*$`, 'i')
+  const lines = (existingNote ?? '')
+    .split(/\r?\n/)
+    .filter(line => !linePattern.test(line))
+
+  const trimmedValue = value?.trim()
+  if (trimmedValue) lines.push(`${label}: ${trimmedValue}`)
+
+  const note = lines.join('\n').trim()
+  return note || null
+}
+
 // ─── Client ───────────────────────────────────────────────────────────────────
 
 export function buildClientPayload(show: ShowRow) {
@@ -70,12 +87,6 @@ export function buildEventNotePayloads(show: ShowRow, eventId: number) {
   add('Notes For Crew', show['Notes For Crew'])
   add('Onsite Payment Details', show['Onsite Payment Details'])
 
-  const logistics = [
-    show['Meeting Place for Crew'] ? `Meeting Place: ${show['Meeting Place for Crew']}` : null,
-    show['Dress Code'] ? `Dress Code: ${show['Dress Code']}` : null,
-  ].filter(Boolean).join('\n')
-  add('Logistics', logistics)
-
   const onsiteLines = [
     show['Onsite Contact Name'] ? `Name: ${show['Onsite Contact Name']}` : null,
     show['Onsite Contact Mobile Number'] ? `Mobile: ${show['Onsite Contact Mobile Number']}` : null,
@@ -85,6 +96,14 @@ export function buildEventNotePayloads(show: ShowRow, eventId: number) {
   add('Onsite Contact', onsiteLines)
 
   return notes
+}
+
+export function buildLogisticsNoteBody(show: ShowRow, existingBody?: string | null): string | null {
+  let body = replaceManagedNoteLine(existingBody, 'Dress Code', null)
+  if (show['Meeting Place for Crew']?.trim()) {
+    body = replaceManagedNoteLine(body, 'Meeting Place', show['Meeting Place for Crew'])
+  }
+  return body
 }
 
 // ─── Event Groups ─────────────────────────────────────────────────────────────
@@ -105,10 +124,11 @@ export function buildEventGroupPayload(call: { date: string; callType: string },
 
 export function buildEventPositionPayload(
   call: { date: string },
-  positionEntry: { quantity: number; label: string; startTime: string; endTime: string },
+  positionEntry: { quantity: number; label: string; startTime: string; endTime: string; dressCode: string },
   eventId: number,
   groupId: number,
-  positionId: number
+  positionId: number,
+  existingNote?: string | null
 ) {
   const isoDate = toISODate(call.date)
   return {
@@ -117,6 +137,7 @@ export function buildEventPositionPayload(
     position: positionId,
     quantity: positionEntry.quantity,
     label: positionEntry.label || null,
+    note: replaceManagedNoteLine(existingNote, 'Dress Code', positionEntry.dressCode),
     rate_setting: mappingConfig.rateSettingDefault,
     schedule_begin: isoDate,
     schedule_end: isoDate,

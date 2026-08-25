@@ -38,6 +38,7 @@ async function lassoFetch<T>(path: string, options: RequestInit = {}): Promise<T
     throw new Error(`Lasso API error ${res.status} on ${path}: ${body}`)
   }
 
+  if (res.status === 204) return undefined as T
   return res.json() as Promise<T>
 }
 
@@ -228,6 +229,10 @@ export async function createEventNote(data: object) {
 
 export async function updateEventNote(id: number, data: object) {
   return lassoFetch<any>(`/event_notes/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export async function deleteEventNote(id: number) {
+  return lassoFetch<void>(`/event_notes/${id}`, { method: 'DELETE' })
 }
 
 export async function getEventNotes(eventId: number) {
