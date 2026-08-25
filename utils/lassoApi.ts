@@ -271,11 +271,6 @@ export async function getAllPositions() {
   return getAll<any>('/positions')
 }
 
-export async function findPositionByName(name: string) {
-  const results = await getAll<any>('/positions', { name })
-  return results.find((p: any) => p.name.toLowerCase() === name.toLowerCase()) ?? null
-}
-
 export async function createPosition(data: object) {
   return lassoFetch<any>('/positions', { method: 'POST', body: JSON.stringify(data) })
 }

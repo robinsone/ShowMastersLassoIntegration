@@ -1,7 +1,8 @@
 import type { ParsedJob, LogEntry } from '../types/index'
 import { validateJobs, type ValidationError } from '../utils/validate'
 import { parseCSVContent } from '../utils/csvParser'
-import { resolveImportLookups, importShow } from '../utils/importer'
+import { resolveImportLookups, importShow, resolvePositionIds } from '../utils/importer'
+import { getAllPositions } from '../utils/lassoApi'
 
 /**
  * Central composable that manages the full import flow state.
@@ -58,6 +59,15 @@ export const useImport = () => {
     const push = (entry: LogEntry) => { logs.value.push(entry) }
 
     try {
+      const lassoPositions = await getAllPositions()
+      const positionIds = resolvePositionIds(jobs.value, lassoPositions)
+      push({
+        type: 'log',
+        action: 'info',
+        entity: 'Position',
+        name: `Preflight passed using ${lassoPositions.length} Lasso positions.`,
+      })
+
       for (let i = 0; i < jobs.value.length; i++) {
         const { show, calls } = jobs.value[i]
 
@@ -74,7 +84,7 @@ export const useImport = () => {
           push({ type: 'log', action, entity, name })
         }
 
-        await importShow(show, calls, lookups, divisionId, logFn, noteCache)
+        await importShow(show, calls, lookups, divisionId, positionIds, logFn, noteCache)
 
         push({ type: 'job_done', jobIndex: i, jobNumber: show['Job Number'] })
       }
