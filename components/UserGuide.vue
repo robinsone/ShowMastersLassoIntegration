@@ -26,7 +26,7 @@ const emit = defineEmits<{
         <h3 class="text-base font-semibold text-highlighted">Before you begin</h3>
         <p class="text-sm leading-6 text-muted">
           Ask your supervisor or manager for your Lasso API key, Lasso base URL, and Division ID.
-          The position names in your CSV must already exist in Lasso.
+          The position names in your CSV or Excel file must already exist in Lasso.
         </p>
         <UAlert
           color="info"
@@ -60,7 +60,8 @@ const emit = defineEmits<{
           <h3 class="text-base font-semibold text-highlighted">Upload your ShowMasters file</h3>
         </div>
         <p class="text-sm leading-6 text-muted">
-          Choose or drop your ShowMasters CSV file. The file can contain one or more jobs.
+          Choose or drop your ShowMasters CSV or .xlsx file. Excel files must use the existing
+          SimpleData headers in the first populated row. Each file can contain one or more jobs.
         </p>
       </section>
 
@@ -90,8 +91,8 @@ const emit = defineEmits<{
         <h3 class="text-base font-semibold text-highlighted">If something goes wrong</h3>
         <div class="space-y-3 text-sm leading-6 text-muted">
           <p>
-            <strong class="text-default">The CSV will not upload:</strong> Make sure it is a ShowMasters CSV,
-            then try again.
+            <strong class="text-default">The file will not upload:</strong> Make sure it is a ShowMasters CSV or
+            unprotected .xlsx file with SimpleData headers, then try again.
           </p>
           <p>
             <strong class="text-default">A position is missing or duplicated:</strong> Ask your supervisor or

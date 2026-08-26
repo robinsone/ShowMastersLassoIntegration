@@ -21,7 +21,7 @@ function onDrop(e: DragEvent) {
     <div class="w-full max-w-lg space-y-6">
       <div class="text-center space-y-2">
         <h1 class="text-3xl font-bold text-highlighted">ShowMasters → Lasso</h1>
-        <p class="text-muted">Upload a ShowMasters SimpleData CSV to import jobs into Lasso.</p>
+        <p class="text-muted">Upload a ShowMasters SimpleData CSV or Excel file to import jobs into Lasso.</p>
       </div>
 
       <!-- Drop zone -->
@@ -35,8 +35,8 @@ function onDrop(e: DragEvent) {
       >
         <UIcon name="i-lucide-upload-cloud" class="size-12 text-muted" />
         <div class="text-center">
-          <p class="font-medium text-highlighted">Drop CSV here or click to browse</p>
-          <p class="text-sm text-muted mt-1">SimpleData.csv (one or more jobs)</p>
+          <p class="font-medium text-highlighted">Drop a CSV or Excel file here, or click to browse</p>
+          <p class="text-sm text-muted mt-1">SimpleData.csv or SimpleData.xlsx (one or more jobs)</p>
         </div>
         <UButton
           label="Select File"
@@ -47,7 +47,13 @@ function onDrop(e: DragEvent) {
         />
       </div>
 
-      <input ref="fileRef" type="file" accept=".csv,text/csv" class="hidden" @change="onFileChange" />
+      <input
+        ref="fileRef"
+        type="file"
+        accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        class="hidden"
+        @change="onFileChange"
+      />
 
       <UAlert
         v-if="uploadError"

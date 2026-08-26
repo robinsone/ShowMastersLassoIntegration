@@ -1,6 +1,7 @@
 import type { ParsedJob, LogEntry } from '../types/index'
 import { validateJobs, type ValidationError } from '../utils/validate'
 import { parseCSVContent } from '../utils/csvParser'
+import { parseExcelContent } from '../utils/excelParser'
 import { resolveImportLookups, importShow, resolvePositionIds } from '../utils/importer'
 import { getAllPositions } from '../utils/lassoApi'
 
@@ -33,13 +34,20 @@ export const useImport = () => {
     uploadError.value = null
 
     try {
-      const content = await file.text()
-      const parsed = parseCSVContent(content)
+      const filename = file.name.toLowerCase()
+      const parsed = filename.endsWith('.xlsx')
+        ? parseExcelContent(await file.arrayBuffer())
+        : filename.endsWith('.csv')
+          ? parseCSVContent(await file.text())
+          : (() => {
+              throw new Error('Select a ShowMasters CSV or .xlsx file.')
+            })()
+
       jobs.value = parsed
       validationErrors.value = validateJobs(parsed)
       step.value = 'review'
     } catch (err: any) {
-      uploadError.value = err.message ?? 'Failed to parse the CSV file.'
+      uploadError.value = err.message ?? 'Failed to parse the uploaded file.'
     } finally {
       isUploading.value = false
     }

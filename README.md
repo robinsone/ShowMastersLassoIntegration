@@ -1,17 +1,17 @@
 # ShowMasters → Lasso Integration
 
-A web app for importing ShowMasters CSV exports into the [Lasso Workforce](https://www.lasso.io/) API.
+A web app for importing ShowMasters CSV and Excel exports into the [Lasso Workforce](https://www.lasso.io/) API.
 
 The app guides you through four steps:
 
-1. Upload a ShowMasters CSV file.
+1. Upload a ShowMasters CSV or Excel file.
 2. Review and edit the parsed jobs.
 3. Run the import into Lasso.
 4. Confirm completion and review the log.
 
 ## What it imports
 
-For each job in the CSV, the app creates or updates the corresponding Lasso records:
+For each job in the file, the app creates or updates the corresponding Lasso records:
 
 - **Client** - matched by name; contact info attached
 - **Venue** - matched by name; address, airport, and notes applied
@@ -28,7 +28,7 @@ The import is idempotent. Running it again on the same data updates only what ch
 - Node.js 22 or newer
 - `pnpm`
 - Lasso API access
-- Every position named in the CSV must already exist in Lasso. The importer matches
+- Every position named in the CSV or Excel file must already exist in Lasso. The importer matches
   position titles case-insensitively after trimming surrounding whitespace.
 
 ## First-time setup
@@ -73,9 +73,14 @@ available again once connectivity returns.
 
 The first time you open the app, it shows a credentials screen. Enter the Lasso API information there so the app can talk to your sandbox or production instance.
 
-### 2. Upload a CSV file
+### 2. Upload a CSV or Excel file
 
-Use the upload step to choose a ShowMasters export. If you do not select a file, the app will keep using its default sample data only as a reference during development.
+Use the upload step to choose a ShowMasters `.csv` or unprotected `.xlsx` export. Excel files must
+have the existing SimpleData headers in their first populated row; the app reads the first non-empty
+worksheet. If you do not select a file, the app will keep using its default sample data only as a reference
+during development.
+
+`data/SimpleData-MultipleJobs.xlsx` is a non-production sample workbook containing two jobs.
 
 ### 3. Review and edit parsed jobs
 
@@ -98,15 +103,17 @@ When the review looks correct, choose Start Import. The progress screen shows:
 If an error occurs, you can go back to review the data and try again.
 
 Before creating or updating any records, the importer loads Lasso positions once and
-preflights every position in the CSV. Missing or duplicate position names stop the
+preflights every position in the file. Missing or duplicate position names stop the
 import and list each affected job and call so the positions can be corrected in Lasso.
 
 ### 5. Finish and repeat
 
-Once the import completes, you can upload another CSV or reset the workflow to start over.
+Once the import completes, you can upload another file or reset the workflow to start over.
 
 ## Troubleshooting
 
-- If a CSV does not parse correctly, make sure it matches the ShowMasters export structure.
+- If a CSV or Excel file does not parse correctly, make sure it matches the ShowMasters export structure.
+- For Excel files, export an unprotected `.xlsx` copy and ensure the first non-empty worksheet has
+  SimpleData headers in its first populated row.
 - If position preflight fails, create the missing position in Lasso or remove duplicate
   Lasso positions with the same name, then retry the import.
