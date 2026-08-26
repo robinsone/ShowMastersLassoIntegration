@@ -26,7 +26,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'ShowMasters → Lasso',
       short_name: 'SM Lasso',
-      description: 'Import ShowMasters CSV job data into Lasso Workforce',
+      description: 'Import ShowMasters CSV and Excel job data into Lasso Workforce',
       theme_color: '#0f1117',
       background_color: '#0f1117',
       display: 'standalone',

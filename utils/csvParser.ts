@@ -1,15 +1,15 @@
 import { parse } from 'csv-parse/browser/esm/sync'
 import type { ParsedJob, ParsedCall } from '../types/index'
 
-interface RawRow extends Record<string, string> { }
+export interface RawRow extends Record<string, string> { }
 
 export function parsePositionTitle(value: string): { title: string; label: string } {
   const match = value.trim().match(/^(.*?)(?:\s+<([^<>]+)>)$/)
   if (!match) return { title: value.trim(), label: '' }
 
   return {
-    title: match[1].trim(),
-    label: match[2].trim(),
+    title: match[1]?.trim() ?? value.trim(),
+    label: match[2]?.trim() ?? '',
   }
 }
 
@@ -22,25 +22,28 @@ function groupIntoCalls(rows: RawRow[]): ParsedCall[] {
     // so times are stored per-position rather than splitting into extra calls.
     const key = [row['Date'], row['Call Type']].join('||')
 
-    if (!groups.has(key)) {
-      groups.set(key, {
-        date: row['Date'],
+    let call = groups.get(key)
+
+    if (!call) {
+      call = {
+        date: row['Date'] ?? '',
         // Representative times for the call (used in review UI / new-position defaults).
         // Individual positions carry their own precise times.
-        startTime: row['Start Time'],
-        endTime: row['End Time'],
-        callType: row['Call Type'],
+        startTime: row['Start Time'] ?? '',
+        endTime: row['End Time'] ?? '',
+        callType: row['Call Type'] ?? '',
         positions: [],
-      })
+      }
+      groups.set(key, call)
     }
 
     const qty = parseInt(row['Position Quantity per Title'], 10)
-    const position = parsePositionTitle(row['Position Title'])
-    groups.get(key)!.positions.push({
+    const position = parsePositionTitle(row['Position Title'] ?? '')
+    call.positions.push({
       ...position,
       quantity: isNaN(qty) ? 1 : qty,
-      startTime: row['Start Time'],
-      endTime: row['End Time'],
+      startTime: row['Start Time'] ?? '',
+      endTime: row['End Time'] ?? '',
       dressCode: row['Dress Code'] ?? '',
     })
   }
@@ -48,29 +51,22 @@ function groupIntoCalls(rows: RawRow[]): ParsedCall[] {
   return Array.from(groups.values())
 }
 
-/**
- * Parses a CSV string and returns an array of job objects.
- * Supports multiple jobs in a single file (multiple VALUE rows).
- */
-export function parseCSVContent(content: string): ParsedJob[] {
-  const rows: RawRow[] = parse(content, {
-    columns: true,
-    skip_empty_lines: false,
-    trim: true,
-    relax_column_count: true,
-  })
-
+export function parseShowMastersRows(rows: RawRow[], sourceLabel = 'CSV'): ParsedJob[] {
   const valueIndices = rows.reduce<number[]>((acc, row, i) => {
     if (row['DATA'] === 'VALUE') acc.push(i)
     return acc
   }, [])
 
   if (valueIndices.length === 0) {
-    throw new Error('No VALUE row found in CSV. Expected at least one row starting with "VALUE".')
+    throw new Error(`No VALUE row found in ${sourceLabel}. Expected at least one row starting with "VALUE".`)
   }
 
   return valueIndices.map((valueIdx, jobIdx) => {
     const valueRow = rows[valueIdx]
+    if (!valueRow) {
+      throw new Error(`Could not read job #${jobIdx + 1} from ${sourceLabel}.`)
+    }
+
     const endIdx = valueIndices[jobIdx + 1] ?? rows.length
     const jobRows = rows.slice(valueIdx, endIdx)
 
@@ -89,4 +85,19 @@ export function parseCSVContent(content: string): ParsedJob[] {
 
     return { show: valueRow, calls: groupIntoCalls(positionRows) }
   })
+}
+
+/**
+ * Parses a CSV string and returns an array of job objects.
+ * Supports multiple jobs in a single file (multiple VALUE rows).
+ */
+export function parseCSVContent(content: string): ParsedJob[] {
+  const rows: RawRow[] = parse(content, {
+    columns: true,
+    skip_empty_lines: false,
+    trim: true,
+    relax_column_count: true,
+  })
+
+  return parseShowMastersRows(rows)
 }

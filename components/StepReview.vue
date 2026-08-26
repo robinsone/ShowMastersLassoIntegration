@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ParsedJob, ParsedCall } from '../types/index'
 
-// Keys must match actual CSV column headers exactly
+// Keys must match actual ShowMasters SimpleData column headers exactly.
 const SHOW_FIELDS: Array<{ key: string; label: string; required?: boolean }> = [
   { key: 'Job Number', label: 'Job Number', required: true },
   { key: 'Job Name', label: 'Job Name', required: true },
