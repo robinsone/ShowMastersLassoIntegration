@@ -5,8 +5,6 @@ import {
   buildClientContactPayload,
   buildVenuePayload,
   buildEventPayload,
-  buildEventNotePayloads,
-  buildLogisticsNoteBody,
   buildEventGroupPayload,
   buildEventPositionPayload,
   buildScheduleEntryPayload,
@@ -61,11 +59,10 @@ export interface ImportLookups {
   statusId: number
 }
 
-export async function resolveImportLookups(show: ShowRow): Promise<ImportLookups> {
-  const [accountUserRoles, markets, accountEventStatuses, airports] = await Promise.all([
+export async function resolveImportLookups(show: ShowRow, statusId: number): Promise<ImportLookups> {
+  const [accountUserRoles, markets, airports] = await Promise.all([
     api.getAccountUserRoles(),
     api.getMarkets(),
-    api.getAccountEventStatuses(),
     api.getAirports(),
   ])
 
@@ -80,21 +77,7 @@ export async function resolveImportLookups(show: ShowRow): Promise<ImportLookups
 
   const airportCode = await resolveAirportCode(marketStr, airports)
 
-  const statusLabel = show['Job Confirmation Status']
-  const mappedSlug = mappingConfig.eventStatusMapping[statusLabel] || statusLabel.toLowerCase()
-  const status = accountEventStatuses.find(
-    (s: any) =>
-      (s.slug || '').toLowerCase() === mappedSlug ||
-      (s.name || '').toLowerCase() === statusLabel.toLowerCase()
-  )
-  if (!status) {
-    throw new Error(
-      `Cannot find Lasso account_event_status matching "${statusLabel}". ` +
-      `Update eventStatusMapping in mappingConfig.ts.`
-    )
-  }
-
-  return { accountUserRoles, airportCode, marketId, statusId: status.id }
+  return { accountUserRoles, airportCode, marketId, statusId }
 }
 
 // ─── Upsert helpers ───────────────────────────────────────────────────────────
@@ -122,10 +105,16 @@ async function upsertClient(show: ShowRow, logFn: LogFn): Promise<number> {
 async function upsertClientContact(show: ShowRow, clientId: number, logFn: LogFn): Promise<number> {
   const payload = buildClientContactPayload(show, clientId)
   const contacts = await api.getClientContacts(clientId)
-  const existing = contacts.find(
-    (c: any) => c.email && payload.email &&
-      c.email.toLowerCase() === payload.email.toLowerCase()
-  )
+  const existing = payload.email
+    ? contacts.find(
+      (c: any) => c.email &&
+        c.email.toLowerCase() === payload.email?.toLowerCase()
+    )
+    : contacts.find(
+      (c: any) =>
+        (c.first_name ?? '').trim().toLowerCase() === (payload.first_name ?? '').trim().toLowerCase() &&
+        (c.last_name ?? '').trim().toLowerCase() === (payload.last_name ?? '').trim().toLowerCase()
+    )
 
   if (existing) {
     const changes = computeDiff(payload, existing)
@@ -319,19 +308,28 @@ export async function importShow(
     }
   }
 
-  const eventPayload = buildEventPayload(show, { ...lookups, clientId, venueId }, calls, divisionId)
   const existingEvent = await api.findEventByExternalCode(jobNumber)
   let eventId: number
   const isNewEvent = !existingEvent
 
   // For existing events, fetch the full detail in a single call. The response
-  // embeds positions (with schedule_entries), notes, and
-  // account_user_role_relationships — eliminating dozens of per-entity lookups
+  // embeds positions (with schedule_entries) and account_user_role_relationships
+  // — eliminating dozens of per-entity lookups
   // that previously took ~40 seconds each.
   let eventDetail: any = null
 
   if (existingEvent) {
     eventDetail = await api.getEventDetail(existingEvent.id)
+  }
+  const eventPayload = buildEventPayload(
+    show,
+    { ...lookups, clientId, venueId },
+    calls,
+    divisionId,
+    eventDetail?.description
+  )
+
+  if (existingEvent) {
     const changes = computeDiff(eventPayload, eventDetail)
     if (changes) {
       await api.updateEvent(eventDetail.id, changes)
@@ -354,41 +352,7 @@ export async function importShow(
     ? new Map()
     : await api.buildEventPositionMap(eventId)
 
-  const embeddedEventNotes: any[] = eventDetail?.notes ?? []
   const embeddedRelationships: any[] = eventDetail?.account_user_role_relationships ?? []
-
-  const eventNotePayloads = buildEventNotePayloads(show, eventId)
-  for (const note of eventNotePayloads) {
-    const existing = embeddedEventNotes.find((n: any) => n.subject === note.subject)
-    if (existing) {
-      if (existing.body !== note.body) {
-        await api.updateEventNote(existing.id, { body: note.body })
-        logFn('updated', 'EventNote', note.subject)
-      } else {
-        logFn('unchanged', 'EventNote', note.subject)
-      }
-    } else {
-      await api.createEventNote(note)
-      logFn('created', 'EventNote', note.subject)
-    }
-  }
-
-  const existingLogisticsNote = embeddedEventNotes.find((n: any) => n.subject === 'Logistics')
-  const logisticsBody = buildLogisticsNoteBody(show, existingLogisticsNote?.body)
-  if (existingLogisticsNote) {
-    if (!logisticsBody) {
-      await api.deleteEventNote(existingLogisticsNote.id)
-      logFn('deleted', 'EventNote', 'Logistics')
-    } else if (existingLogisticsNote.body !== logisticsBody) {
-      await api.updateEventNote(existingLogisticsNote.id, { body: logisticsBody })
-      logFn('updated', 'EventNote', 'Logistics')
-    } else {
-      logFn('unchanged', 'EventNote', 'Logistics')
-    }
-  } else if (logisticsBody) {
-    await api.createEventNote({ event: eventId, subject: 'Logistics', body: logisticsBody })
-    logFn('created', 'EventNote', 'Logistics')
-  }
 
   const smplStaff = [
     { name: show['SMPL Salesperson Name'], email: show['SMPL Salesperson Email'] },

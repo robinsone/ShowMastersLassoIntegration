@@ -3,6 +3,14 @@ import type { ParsedJob, ParsedCall } from '../types/index'
 
 export interface RawRow extends Record<string, string> { }
 
+export function decodeCSVContent(content: ArrayBuffer): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(content)
+  } catch {
+    return new TextDecoder('windows-1252').decode(content)
+  }
+}
+
 export function parsePositionTitle(value: string): { title: string; label: string } {
   const match = value.trim().match(/^(.*?)(?:\s+<([^<>]+)>)$/)
   if (!match) return { title: value.trim(), label: '' }

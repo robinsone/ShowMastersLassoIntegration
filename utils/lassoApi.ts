@@ -48,6 +48,12 @@ interface PagedResponse<T> {
   results?: T[]
 }
 
+export interface AccountEventStatus {
+  id: number
+  name: string
+  slug?: string | null
+}
+
 // Single-page lookup for external_code filters. Using getAll() causes the Lasso
 // API to return every record in the database when the code doesn't exist yet
 // (the filter is ignored server-side on a no-match), which can take 40+ seconds.
@@ -98,7 +104,7 @@ async function getAll<T>(endpoint: string, params: Record<string, string | numbe
 
 export const getAccountUserRoles = () => getAll<any>('/account_user_role')
 export const getMarkets = () => getAll<any>('/markets')
-export const getAccountEventStatuses = () => getAll<any>('/account_event_statuses')
+export const getAccountEventStatuses = () => getAll<AccountEventStatus>('/account_event_statuses')
 export const getAirports = (params?: Record<string, string>) => getAll<any>('/airports', params)
 
 // ─── Clients ──────────────────────────────────────────────────────────────────

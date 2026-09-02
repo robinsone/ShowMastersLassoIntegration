@@ -46,13 +46,4 @@ export const mappingConfig = {
     'ST. LOUIS': 'STL',
   } as Record<string, string>,
   rateSettingDefault: 'crew_default',
-  eventStatusMapping: {
-    'Confirmed': 'confirmed',
-    'Unconfirmed': 'unconfirmed',
-    'Tentative': 'tentative',
-    'Canceled': 'canceled',
-    'Cancelled': 'canceled',
-    'Hold': 'hold',
-    'Prospect': 'prospect',
-  } as Record<string, string>,
 }
