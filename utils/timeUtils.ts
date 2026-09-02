@@ -7,8 +7,14 @@ export function to24Hour(timeStr: string | null | undefined): string | null {
 
   const clean = timeStr.trim().toLowerCase().replace(/\./g, '').replace(/\s+/g, '')
 
-  if (/^\d{2}:\d{2}$/.test(clean)) return clean + ':00'
-  if (/^\d{2}:\d{2}:\d{2}$/.test(clean)) return clean
+  if (/^\d{1,2}:\d{2}$/.test(clean)) {
+    const [hours, minutes] = clean.split(':')
+    return `${hours.padStart(2, '0')}:${minutes}:00`
+  }
+  if (/^\d{1,2}:\d{2}:\d{2}$/.test(clean)) {
+    const [hours, minutes, seconds] = clean.split(':')
+    return `${hours.padStart(2, '0')}:${minutes}:${seconds}`
+  }
 
   const match = clean.match(/^(\d{1,2}):(\d{2})(am|pm)$/)
   if (!match) {

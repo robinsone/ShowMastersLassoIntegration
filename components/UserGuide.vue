@@ -71,8 +71,9 @@ const emit = defineEmits<{
           <h3 class="text-base font-semibold text-highlighted">Review before importing</h3>
         </div>
         <p class="text-sm leading-6 text-muted">
-          Check each job's details, calls, position names, quantities, and times. Fix every warning before selecting
-          <strong>Start Import</strong>. You can add or remove calls and positions when needed.
+          Check each job's details, including the default Confirmed Account Status, Job Confirmation Status, Billable
+          Company and client contact, notes, calls, position names, quantities, and times. Fix every warning before
+          selecting <strong>Start Import</strong>. You can add or remove calls and positions when needed.
         </p>
       </section>
 

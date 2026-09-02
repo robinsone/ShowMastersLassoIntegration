@@ -16,7 +16,7 @@ For each job in the file, the app creates or updates the corresponding Lasso rec
 - **Client** - matched by name; contact info attached
 - **Venue** - matched by name; address, airport, and notes applied
 - **Event** - named by Job Number; linked to client, venue, division, and dates
-- **Event Notes** - booking staff notes, crew notes, onsite contact, logistics, payment details
+- **Event Description** - Job Confirmation Status, booking staff notes, crew notes, onsite contact, logistics, and payment details
 - **Event Groups** - one per call type/date combination, such as LOAD IN or LOAD OUT
 - **Event Positions** - one per position per group, with quantity, schedule times, and crew-visible dress-code notes
 - **Schedule Entries** - one per event position, matching the call date and times
@@ -30,6 +30,10 @@ The import is idempotent. Running it again on the same data updates only what ch
 - Lasso API access
 - Every position named in the CSV or Excel file must already exist in Lasso. The importer matches
   position titles case-insensitively after trimming surrounding whitespace.
+
+  The importer maps **Billable Company** to the Lasso client and the **Orderer** fields to its client
+  contact. If a file does not include Billable Company, enter the client company during review before
+  importing.
 
 ## First-time setup
 
@@ -87,7 +91,10 @@ during development.
 After upload, the app shows a review screen. Use this step to:
 
 - inspect the parsed jobs
-- fix any fields before importing
+- confirm the default Lasso Account Status of Confirmed, or select another status when needed
+- review and edit Job Confirmation Status, which is added to the Event Description
+- fix any fields before importing, including a missing Billable Company
+- review client, venue, event, and onsite notes
 - add or remove calls and positions if needed
 
 If you need to go back, use the Back button. That keeps the parsed data in place so you can continue editing.
