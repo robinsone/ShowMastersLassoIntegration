@@ -71,10 +71,10 @@ const emit = defineEmits<{
           <h3 class="text-base font-semibold text-highlighted">Review before importing</h3>
         </div>
         <p class="text-sm leading-6 text-muted">
-          Check each job's details, including Account Status. A blank Job Confirmation Status defaults to Unconfirmed;
-          a populated value defaults to Confirmed. Also review the Billable Company and client contact, notes, calls,
-          position names, quantities, and times. Fix every warning before selecting <strong>Start Import</strong>.
-          You can add or remove calls and positions when needed.
+          Check each job's details, including Job Confirmation Status. The dropdown defaults to Unconfirmed when the
+          imported status is blank and Confirmed when it is populated. Also review the Billable Company and client
+          contact, notes, calls, position names, quantities, and times. Fix every warning before selecting
+          <strong>Start Import</strong>. You can add or remove calls and positions when needed.
         </p>
       </section>
 

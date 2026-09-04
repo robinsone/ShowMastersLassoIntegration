@@ -144,7 +144,7 @@ export const useImport = () => {
         })
 
         if (lassoStatusId == null) {
-          throw new Error(`Select a Lasso Account Status for job ${show['Job Number']} before importing.`)
+          throw new Error(`Select a Lasso Job Confirmation Status for job ${show['Job Number']} before importing.`)
         }
         const lookups = await resolveImportLookups(show, lassoStatusId)
 

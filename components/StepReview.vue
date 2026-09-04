@@ -25,7 +25,6 @@ const SHOW_FIELDS: InputField[] = [
   { key: 'Venue Zip Code', label: 'Zip', placeholder: 'Postal code', leadingIcon: 'i-lucide-mailbox' },
   { key: 'Room', label: 'Room', placeholder: 'Room or area', leadingIcon: 'i-lucide-door-open' },
   { key: "Job's Market", label: 'Market', required: true, placeholder: 'City, State', leadingIcon: 'i-lucide-map-pin' },
-  { key: 'Job Confirmation Status', label: 'Job Confirmation Status', description: 'Added to the Event Description. Blank defaults Account Status to Unconfirmed; populated defaults it to Confirmed.', placeholder: 'Source confirmation status', leadingIcon: 'i-lucide-badge-check' },
   { key: 'SMPL Salesperson Name', label: 'SMPL Salesperson', placeholder: 'Salesperson name', leadingIcon: 'i-lucide-user-round' },
   { key: 'SMPL General Manager Name', label: 'SMPL GM', placeholder: 'General manager name', leadingIcon: 'i-lucide-user-round' },
 ]
@@ -184,10 +183,10 @@ function callBorderClass(type: string): string {
                 </div>
               </template>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                <UFormField label="Account Status *" name="lassoStatusId"
+                <UFormField label="Job Confirmation Status *" name="lassoStatusId"
                   :class="['min-w-0', { 'rounded-md border border-error bg-error/5 p-2': activeJob.lassoStatusId == null }]">
                   <USelect v-model="activeJob.lassoStatusId" :items="statusOptions"
-                    placeholder="Select a Lasso status" size="sm" class="w-full" />
+                    placeholder="Select a Lasso job confirmation status" size="sm" class="w-full" />
                 </UFormField>
                 <UFormField v-for="f in SHOW_FIELDS" :key="f.key" :label="f.label + (f.required ? ' *' : '')"
                   :name="f.key" :description="f.description"
