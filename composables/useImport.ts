@@ -60,16 +60,10 @@ export const useImport = () => {
         return
       }
 
-      const confirmedStatus = statuses.find(
-        status => status.name.trim().toLowerCase() === 'confirmed'
-      )
-      if (!confirmedStatus) {
-        uploadError.value = 'Lasso did not return an Account Status named "Confirmed". Check the connection and try again.'
-        return
-      }
-
       for (const job of parsed) {
-        job.lassoStatusId = confirmedStatus.id
+        const sourceStatus = job.show['Job Confirmation Status']?.trim().toLowerCase()
+        const matchedStatus = statuses.find(status => status.name.trim().toLowerCase() === sourceStatus)
+        job.lassoStatusId = matchedStatus?.id
       }
 
       lassoStatuses.value = statuses
