@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LassoSettings } from '../composables/useConfig'
+import { getDivisionIdError, type LassoSettings } from '../composables/useConfig'
 
 const emit = defineEmits<{ configured: [] }>()
 
@@ -12,8 +12,10 @@ const form = reactive<LassoSettings>({
 })
 
 const saved = ref(false)
+const divisionIdError = computed(() => getDivisionIdError(form.divisionId))
 
 function onSubmit() {
+  if (divisionIdError.value) return
   save({ ...form })
   saved.value = true
   setTimeout(() => {
@@ -53,12 +55,15 @@ function onSubmit() {
             />
           </UFormField>
 
-          <UFormField label="Division ID" name="divisionId" required>
+          <UFormField label="Division ID (optional)" name="divisionId" :error="divisionIdError">
             <UInput
               v-model="form.divisionId"
-              placeholder="e.g. 42"
+              placeholder="Leave blank when Lasso has no divisions"
               class="w-full"
             />
+            <p class="mt-1 text-xs text-muted">
+              Enter a positive numeric ID to assign a division. Blank sends no division.
+            </p>
           </UFormField>
 
           <div class="flex justify-end gap-2 pt-2">
@@ -77,8 +82,8 @@ function onSubmit() {
         color="warning"
         variant="soft"
         icon="i-lucide-triangle-alert"
-        title="Credentials required"
-        description="Fill in your API key, base URL, and Division ID to start importing."
+        title="Valid configuration required"
+        :description="divisionIdError ?? 'Fill in your API key and base URL to start importing.'"
       />
 
       <UAlert

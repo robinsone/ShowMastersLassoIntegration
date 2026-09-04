@@ -8,6 +8,12 @@ export interface LassoSettings {
   divisionId: string
 }
 
+export function getDivisionIdError(value: string): string | null {
+  const divisionId = value.trim()
+  if (!divisionId || /^[1-9]\d*$/.test(divisionId)) return null
+  return 'Division ID must be a positive whole number, or leave it blank.'
+}
+
 const defaultSettings: LassoSettings = {
   apiKey: '',
   baseUrl: 'https://test1.lasso.io/api/v1',
@@ -28,7 +34,7 @@ export const useConfig = () => {
   const isConfigured = computed(() =>
     !!settings.value.apiKey.trim() &&
     !!settings.value.baseUrl.trim() &&
-    !!settings.value.divisionId.trim()
+    !getDivisionIdError(settings.value.divisionId)
   )
 
   function save(newSettings: LassoSettings) {
@@ -44,13 +50,16 @@ export const useConfig = () => {
       setLassoConfig({
         apiKey: settings.value.apiKey.trim(),
         baseUrl: settings.value.baseUrl.trim(),
-        divisionId: parseInt(settings.value.divisionId.trim(), 10),
+        divisionId: getDivisionId(),
       })
     }
   }
 
-  function getDivisionId(): number {
-    return parseInt(settings.value.divisionId.trim(), 10)
+  function getDivisionId(): number | null {
+    const divisionId = settings.value.divisionId.trim()
+    const error = getDivisionIdError(divisionId)
+    if (error) throw new Error(error)
+    return divisionId ? Number(divisionId) : null
   }
 
   // Apply on first load

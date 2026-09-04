@@ -58,7 +58,7 @@ export function buildEventPayload(
   show: ShowRow,
   refs: { clientId: number; venueId: number; statusId: number; airportCode: string | null; marketId: number | null },
   calls: Array<{ date: string }>,
-  divisionId: number,
+  divisionId: number | null,
   existingDescription?: string | null
 ) {
   const isoDates = calls.map(c => toISODate(c.date)).filter(Boolean).sort() as string[]
