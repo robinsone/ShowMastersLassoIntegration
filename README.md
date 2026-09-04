@@ -91,8 +91,8 @@ during development.
 After upload, the app shows a review screen. Use this step to:
 
 - inspect the parsed jobs
-- confirm the default Lasso Account Status of Confirmed, or select another status when needed
-- review and edit Job Confirmation Status, which is added to the Event Description
+- confirm the Lasso Account Status default: Confirmed when Job Confirmation Status is populated, or Unconfirmed when it is blank
+- review and edit Job Confirmation Status, which is added to the Event Description and defaults the Account Status to Confirmed when populated or Unconfirmed when blank
 - fix any fields before importing, including a missing Billable Company
 - review client, venue, event, and onsite notes
 - add or remove calls and positions if needed

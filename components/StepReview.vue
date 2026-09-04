@@ -25,7 +25,7 @@ const SHOW_FIELDS: InputField[] = [
   { key: 'Venue Zip Code', label: 'Zip', placeholder: 'Postal code', leadingIcon: 'i-lucide-mailbox' },
   { key: 'Room', label: 'Room', placeholder: 'Room or area', leadingIcon: 'i-lucide-door-open' },
   { key: "Job's Market", label: 'Market', required: true, placeholder: 'City, State', leadingIcon: 'i-lucide-map-pin' },
-  { key: 'Job Confirmation Status', label: 'Job Confirmation Status', description: 'Added to the Event Description; it does not set the Lasso Account Status.', placeholder: 'Source confirmation status', leadingIcon: 'i-lucide-badge-check' },
+  { key: 'Job Confirmation Status', label: 'Job Confirmation Status', description: 'Added to the Event Description. Blank defaults Account Status to Unconfirmed; populated defaults it to Confirmed.', placeholder: 'Source confirmation status', leadingIcon: 'i-lucide-badge-check' },
   { key: 'SMPL Salesperson Name', label: 'SMPL Salesperson', placeholder: 'Salesperson name', leadingIcon: 'i-lucide-user-round' },
   { key: 'SMPL General Manager Name', label: 'SMPL GM', placeholder: 'General manager name', leadingIcon: 'i-lucide-user-round' },
 ]
