@@ -113,14 +113,12 @@ export function buildEventGroupPayload(call: { date: string; callType: string },
 // ─── Event Positions ──────────────────────────────────────────────────────────
 
 export function buildEventPositionPayload(
-  call: { date: string },
-  positionEntry: { quantity: number; label: string; startTime: string; endTime: string; dressCode: string },
+  positionEntry: { quantity: number; label: string; dressCode: string },
   eventId: number,
   groupId: number,
   positionId: number,
   existingNote?: string | null
 ) {
-  const isoDate = toISODate(call.date)
   return {
     event: eventId,
     group: groupId,
@@ -129,10 +127,10 @@ export function buildEventPositionPayload(
     label: positionEntry.label || null,
     note: replaceManagedLine(existingNote, 'Dress Code', positionEntry.dressCode),
     rate_setting: mappingConfig.rateSettingDefault,
-    schedule_begin: isoDate,
-    schedule_end: isoDate,
-    day_begin: to24Hour(positionEntry.startTime),
-    day_end: to24Hour(positionEntry.endTime),
+    // These helpers create a shift for every day in the position's schedule.
+    // Shifts are instead created individually from their source call dates.
+    day_begin: null,
+    day_end: null,
     external_code: `EP-${eventId}-${groupId}-${positionId}`,
   }
 }

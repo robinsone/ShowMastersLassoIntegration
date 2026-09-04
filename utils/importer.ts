@@ -217,6 +217,10 @@ function getPositionId(title: string, positionIds: Map<string, number>): number 
   return positionId
 }
 
+function isManagedScheduleEntry(externalCode: unknown): externalCode is string {
+  return typeof externalCode === 'string' && /^SE-\d+-\d{4}-\d{2}-\d{2}$/.test(externalCode)
+}
+
 // ─── Main: Import One Show ────────────────────────────────────────────────────
 
 
@@ -385,6 +389,8 @@ export async function importShow(
 
   const existingGroups = await api.getEventGroups(eventId)
   const roomName = show['Room'] || null
+  const expectedScheduleEntryCodes = new Set<string>()
+  const expectedScheduleEntryIds = new Set<number>()
 
   for (const call of calls) {
     const groupPayload = buildEventGroupPayload(call, eventId, venueId, roomName)
@@ -411,13 +417,11 @@ export async function importShow(
     for (const positionEntry of call.positions) {
       const positionId = getPositionId(positionEntry.title, positionIds)
       let eventPositionId: number
-      let epJustCreated = false
       const externalCode = `EP-${eventId}-${groupId}-${positionId}`
       const existingEP = isNewEvent
         ? null
         : eventPositionMap.get(externalCode) ?? null
       const epPayload = buildEventPositionPayload(
-        call,
         positionEntry,
         eventId,
         groupId,
@@ -430,7 +434,6 @@ export async function importShow(
         const created = await api.createEventPosition(epPayload)
         logFn('created', 'EventPosition', positionEntry.title)
         eventPositionId = created.id
-        epJustCreated = true
       } else {
         // Existing event — look up from the pre-seeded map (O(1), no API call).
         if (existingEP) {
@@ -446,39 +449,48 @@ export async function importShow(
           const created = await api.createEventPosition(epPayload)
           logFn('created', 'EventPosition', positionEntry.title)
           eventPositionId = created.id
-          epJustCreated = true
         }
       }
 
       const sePayload = buildScheduleEntryPayload(call, positionEntry, eventId, eventPositionId)
+      expectedScheduleEntryCodes.add(sePayload.external_code)
+      const embeddedScheduleEntries: any[] = existingEP?.schedule_entries ?? []
 
-      if (epJustCreated) {
-        // When createEventPosition is called with day_begin/day_end set, the
-        // Lasso API automatically creates the schedule entry as a convenience.
-        // Sending another POST would produce a 400 "unique set" duplicate error.
-        logFn('created', 'ScheduleEntry', `${sePayload.date} ${call.callType} (auto-created with position)`)
-      } else {
-        // Look up schedule entries from the pre-seeded event position map.
-        const matchedEP = eventPositionMap.get(epPayload.external_code as string) ?? null
-        const embeddedScheduleEntries: any[] = matchedEP?.schedule_entries ?? []
+      const existingEntry = embeddedScheduleEntries.find(
+        (se: any) => se.external_code === sePayload.external_code
+      ) ?? embeddedScheduleEntries.find(
+        (se: any) => se.date === sePayload.date
+      ) ?? null
 
-        const existingEntry = embeddedScheduleEntries.find(
-          (se: any) => se.external_code === sePayload.external_code
-        ) ?? embeddedScheduleEntries.find(
-          (se: any) => se.date === sePayload.date
-        ) ?? null
-
-        if (existingEntry) {
-          const changes = computeDiff(sePayload, existingEntry)
-          if (changes) {
-            await api.updateScheduleEntry(existingEntry.id, changes)
-            logFn('updated', 'ScheduleEntry', `${sePayload.date} ${call.callType}`)
-          } else {
-            logFn('unchanged', 'ScheduleEntry', `${sePayload.date} ${call.callType}`)
-          }
+      if (existingEntry) {
+        expectedScheduleEntryIds.add(existingEntry.id)
+        const changes = computeDiff(sePayload, existingEntry)
+        if (changes) {
+          await api.updateScheduleEntry(existingEntry.id, changes)
+          logFn('updated', 'ScheduleEntry', `${sePayload.date} ${call.callType}`)
         } else {
-          await api.createScheduleEntry(sePayload)
-          logFn('created', 'ScheduleEntry', `${sePayload.date} ${call.callType}`)
+          logFn('unchanged', 'ScheduleEntry', `${sePayload.date} ${call.callType}`)
+        }
+      } else {
+        await api.createScheduleEntry(sePayload)
+        logFn('created', 'ScheduleEntry', `${sePayload.date} ${call.callType}`)
+      }
+    }
+  }
+
+  if (!isNewEvent) {
+    for (const [eventPositionCode, eventPosition] of eventPositionMap) {
+      if (!eventPositionCode.startsWith(`EP-${eventId}-`)) continue
+
+      const scheduleEntries: any[] = eventPosition.schedule_entries ?? []
+      for (const scheduleEntry of scheduleEntries) {
+        if (
+          isManagedScheduleEntry(scheduleEntry.external_code) &&
+          !expectedScheduleEntryIds.has(scheduleEntry.id) &&
+          !expectedScheduleEntryCodes.has(scheduleEntry.external_code)
+        ) {
+          await api.deleteScheduleEntry(scheduleEntry.id)
+          logFn('deleted', 'ScheduleEntry', `${scheduleEntry.date} (not in source)`)
         }
       }
     }

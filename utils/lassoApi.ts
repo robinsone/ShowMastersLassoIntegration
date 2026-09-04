@@ -343,3 +343,7 @@ export async function createScheduleEntry(data: object) {
 export async function updateScheduleEntry(id: number, data: object) {
   return lassoFetch<any>(`/schedule_entries/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
 }
+
+export async function deleteScheduleEntry(id: number) {
+  return lassoFetch<void>(`/schedule_entries/${id}`, { method: 'DELETE' })
+}
