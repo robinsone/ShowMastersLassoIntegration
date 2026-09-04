@@ -78,7 +78,6 @@ export function buildEventPayload(
 
 export function buildEventDescription(show: ShowRow, existingDescription?: string | null): string | null {
   const fields = [
-    ['Job Confirmation Status', show['Job Confirmation Status']],
     ['Notes for Booking Staff', show['Notes for Booking Staff']],
     ['Notes For Crew', show['Notes For Crew']],
     ['Onsite Payment Details', show['Onsite Payment Details']],
@@ -88,7 +87,7 @@ export function buildEventDescription(show: ShowRow, existingDescription?: strin
     ['Onsite Contact Order Change Authorization', show['Onsite Contact Order Change Authorization']],
   ] as const
 
-  let description = existingDescription ?? null
+  let description = replaceManagedLine(existingDescription, 'Job Confirmation Status', null)
   for (const [label, value] of fields) {
     if (value?.trim()) {
       description = replaceManagedLine(description, label, value)

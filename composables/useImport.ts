@@ -63,13 +63,30 @@ export const useImport = () => {
       const confirmedStatus = statuses.find(
         status => status.name.trim().toLowerCase() === 'confirmed'
       )
-      if (!confirmedStatus) {
+      const unconfirmedStatus = statuses.find(
+        status => status.name.trim().toLowerCase() === 'unconfirmed'
+      )
+      const needsConfirmedStatus = parsed.some(job => !!job.show['Job Confirmation Status']?.trim())
+      const needsUnconfirmedStatus = parsed.some(job => !job.show['Job Confirmation Status']?.trim())
+
+      if (needsConfirmedStatus && !confirmedStatus) {
         uploadError.value = 'Lasso did not return an Account Status named "Confirmed". Check the connection and try again.'
+        return
+      }
+      if (needsUnconfirmedStatus && !unconfirmedStatus) {
+        uploadError.value = 'Lasso did not return an Account Status named "Unconfirmed". Check the connection and try again.'
         return
       }
 
       for (const job of parsed) {
-        job.lassoStatusId = confirmedStatus.id
+        const defaultStatus = job.show['Job Confirmation Status']?.trim()
+          ? confirmedStatus
+          : unconfirmedStatus
+        if (!defaultStatus) {
+          uploadError.value = 'Could not determine a default Lasso Account Status. Check the connection and try again.'
+          return
+        }
+        job.lassoStatusId = defaultStatus.id
       }
 
       lassoStatuses.value = statuses
@@ -127,7 +144,7 @@ export const useImport = () => {
         })
 
         if (lassoStatusId == null) {
-          throw new Error(`Select a Lasso Account Status for job ${show['Job Number']} before importing.`)
+          throw new Error(`Select a Lasso Job Confirmation Status for job ${show['Job Number']} before importing.`)
         }
         const lookups = await resolveImportLookups(show, lassoStatusId)
 

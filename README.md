@@ -16,7 +16,7 @@ For each job in the file, the app creates or updates the corresponding Lasso rec
 - **Client** - matched by name; contact info attached
 - **Venue** - matched by name; address, airport, and notes applied
 - **Event** - named by Job Number; linked to client, venue, dates, and an optional division
-- **Event Description** - Job Confirmation Status, booking staff notes, crew notes, onsite contact, logistics, and payment details
+- **Event Description** - booking staff notes, crew notes, onsite contact, logistics, and payment details
 - **Event Groups** - one per call type/date combination, such as LOAD IN or LOAD OUT
 - **Event Positions** - one per position per group, with quantity, schedule times, and crew-visible dress-code notes
 - **Schedule Entries** - one per event position, matching the call date and times
@@ -91,8 +91,8 @@ during development.
 After upload, the app shows a review screen. Use this step to:
 
 - inspect the parsed jobs
-- confirm the default Lasso Account Status of Confirmed, or select another status when needed
-- review and edit Job Confirmation Status, which is added to the Event Description
+- confirm the Job Confirmation Status default: Confirmed when the imported status is populated, or Unconfirmed when it is blank
+- review and edit Job Confirmation Status before importing
 - fix any fields before importing, including a missing Billable Company
 - review client, venue, event, and onsite notes
 - add or remove calls and positions if needed

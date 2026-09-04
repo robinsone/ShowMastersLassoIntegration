@@ -32,7 +32,7 @@ export function validateJobs(jobs: ParsedJob[], requireLassoStatus = false): Val
     }
 
     if (requireLassoStatus && jobs[i].lassoStatusId == null) {
-      errors.push({ jobIndex: i, field: 'Account Status', message: 'Select a Lasso Account Status.' })
+      errors.push({ jobIndex: i, field: 'Job Confirmation Status', message: 'Select a Lasso Job Confirmation Status.' })
     }
 
     if (!calls.length) {

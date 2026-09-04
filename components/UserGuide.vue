@@ -25,7 +25,7 @@ const emit = defineEmits<{
         <section class="space-y-3">
         <h3 class="text-base font-semibold text-highlighted">Before you begin</h3>
         <p class="text-sm leading-6 text-muted">
-          Ask your supervisor or manager for your Lasso API key, Lasso base URL, and Division ID.
+          Ask your supervisor or manager for your Lasso API key, Lasso base URL, and optional Division ID.
           The position names in your CSV or Excel file must already exist in Lasso.
         </p>
         <UAlert
@@ -43,7 +43,7 @@ const emit = defineEmits<{
           <h3 class="text-base font-semibold text-highlighted">Connect to Lasso</h3>
         </div>
         <p class="text-sm leading-6 text-muted">
-          Enter the three connection details you received, then select <strong>Save Credentials</strong>.
+          Enter the connection details you received, then select <strong>Save Credentials</strong>.
           You can update them later with the settings button in the header.
         </p>
         <UButton
@@ -71,9 +71,10 @@ const emit = defineEmits<{
           <h3 class="text-base font-semibold text-highlighted">Review before importing</h3>
         </div>
         <p class="text-sm leading-6 text-muted">
-          Check each job's details, including the default Confirmed Account Status, Job Confirmation Status, Billable
-          Company and client contact, notes, calls, position names, quantities, and times. Fix every warning before
-          selecting <strong>Start Import</strong>. You can add or remove calls and positions when needed.
+          Check each job's details, including Job Confirmation Status. The dropdown defaults to Unconfirmed when the
+          imported status is blank and Confirmed when it is populated. Also review the Billable Company and client
+          contact, notes, calls, position names, quantities, and times. Fix every warning before selecting
+          <strong>Start Import</strong>. You can add or remove calls and positions when needed.
         </p>
       </section>
 
