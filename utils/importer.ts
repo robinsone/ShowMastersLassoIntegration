@@ -225,7 +225,7 @@ export async function importShow(
   show: ShowRow,
   calls: ParsedCall[],
   lookups: ImportLookups,
-  divisionId: number,
+  divisionId: number | null,
   positionIds: Map<string, number>,
   logFn: LogFn,
   noteCache: Map<string, number> = new Map()

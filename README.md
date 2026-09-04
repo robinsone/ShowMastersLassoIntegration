@@ -15,7 +15,7 @@ For each job in the file, the app creates or updates the corresponding Lasso rec
 
 - **Client** - matched by name; contact info attached
 - **Venue** - matched by name; address, airport, and notes applied
-- **Event** - named by Job Number; linked to client, venue, division, and dates
+- **Event** - named by Job Number; linked to client, venue, dates, and an optional division
 - **Event Description** - Job Confirmation Status, booking staff notes, crew notes, onsite contact, logistics, and payment details
 - **Event Groups** - one per call type/date combination, such as LOAD IN or LOAD OUT
 - **Event Positions** - one per position per group, with quantity, schedule times, and crew-visible dress-code notes
@@ -47,7 +47,7 @@ Set the following values in `.env`:
 
 - `LASSO_API_KEY`
 - `LASSO_BASE_URL`
-- `DIVISION_ID`
+- `DIVISION_ID` (optional; leave blank when the Lasso account has no divisions)
 
 ## Run the app locally
 
@@ -75,7 +75,7 @@ available again once connectivity returns.
 
 ### 1. Configure Lasso credentials
 
-The first time you open the app, it shows a credentials screen. Enter the Lasso API information there so the app can talk to your sandbox or production instance.
+The first time you open the app, it shows a credentials screen. Enter the Lasso API information there so the app can talk to your sandbox or production instance. Division ID is optional: leave it blank when the Lasso account has no divisions, or enter the positive numeric ID returned by Lasso.
 
 ### 2. Upload a CSV or Excel file
 

@@ -1,7 +1,7 @@
 export interface LassoConfig {
   apiKey: string
   baseUrl: string
-  divisionId: number
+  divisionId: number | null
 }
 
 let _config: LassoConfig | null = null
@@ -203,28 +203,25 @@ export async function getEventDetail(eventId: number): Promise<any> {
   return lassoFetch<any>(`/events/${eventId}`)
 }
 
+function serializeEventForm(data: Record<string, any>): string {
+  // Production Lasso accepts nullable event fields as empty form values, not JSON nulls.
+  return new URLSearchParams(
+    Object.entries(data).map(([key, value]) => [key, value == null ? '' : String(value)])
+  ).toString()
+}
+
 export async function createEvent(data: Record<string, any>) {
-  const form = new URLSearchParams(
-    Object.entries(data)
-      .filter(([, v]) => v != null)
-      .map(([k, v]) => [k, String(v)])
-  )
   return lassoFetch<any>('/events', {
     method: 'POST',
-    body: form.toString(),
+    body: serializeEventForm(data),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
 }
 
 export async function updateEvent(id: number, data: Record<string, any>) {
-  const form = new URLSearchParams(
-    Object.entries(data)
-      .filter(([, v]) => v != null)
-      .map(([k, v]) => [k, String(v)])
-  )
   return lassoFetch<any>(`/events/${id}`, {
     method: 'PATCH',
-    body: form.toString(),
+    body: serializeEventForm(data),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
 }
