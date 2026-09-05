@@ -130,7 +130,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Replace installer on existing release
-        if: steps.version.outputs.publish_release == 'false'
+        if: steps.version.outputs.publish_release == 'false' && steps.version.outputs.dry_run != 'true'
         shell: pwsh
         run: gh release upload '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' 'release/ShowMasters-Lasso-Setup.exe.blockmap' 'release/latest.yml' --clobber
         env:
