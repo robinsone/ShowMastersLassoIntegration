@@ -1,0 +1,172 @@
+name: Release and deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing vX.Y.Z tag to rebuild and redeploy (required unless dry_run is selected)
+        required: false
+        type: string
+      dry_run:
+        description: Build and stage release artifacts without deploying or publishing
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-and-deploy
+  cancel-in-progress: true
+
+jobs:
+  release-and-deploy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Select release version
+        id: version
+        shell: pwsh
+        run: |
+          git fetch origin master --tags
+
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $dryRun = '${{ inputs.dry_run }}' -eq 'true'
+
+            if ($dryRun) {
+              $version = node -p "require('./package.json').version"
+              $tag = "v$version"
+              'dry_run=true' >> $env:GITHUB_OUTPUT
+              'publish_release=false' >> $env:GITHUB_OUTPUT
+            }
+            else {
+              $tag = '${{ inputs.release_tag }}'
+              if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
+                throw 'release_tag must use the vX.Y.Z format.'
+              }
+
+              $latestTag = git tag --list 'v*' --sort=-version:refname | Select-Object -First 1
+              if ($tag -ne $latestTag) {
+                throw "Manual recovery may only republish the latest release tag ($latestTag)."
+              }
+
+              git checkout $tag
+              $version = $tag.Substring(1)
+              'publish_release=false' >> $env:GITHUB_OUTPUT
+              'dry_run=false' >> $env:GITHUB_OUTPUT
+            }
+          }
+          else {
+            git checkout --detach origin/master
+            $existingTag = git tag --list 'v*' --sort=-version:refname | Select-Object -First 1
+
+            if ($existingTag) {
+              pnpm version patch --no-git-tag-version
+            }
+
+            $version = node -p "require('./package.json').version"
+            $tag = "v$version"
+            'publish_release=true' >> $env:GITHUB_OUTPUT
+            'dry_run=false' >> $env:GITHUB_OUTPUT
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Build Windows installer
+        run: pnpm electron:build
+
+      - name: Stage updater files for Vercel
+        shell: pwsh
+        run: |
+          $updatesDirectory = 'public/updates'
+          New-Item -ItemType Directory -Force -Path $updatesDirectory | Out-Null
+          Copy-Item 'release/ShowMasters-Lasso-Setup.exe' $updatesDirectory -Force
+          Copy-Item 'release/latest.yml' $updatesDirectory -Force
+
+          $blockMap = 'release/ShowMasters-Lasso-Setup.exe.blockmap'
+          if (Test-Path $blockMap) {
+            Copy-Item $blockMap $updatesDirectory -Force
+          }
+
+      - name: Upload dry-run artifacts
+        if: steps.version.outputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShowMasters-Lasso-${{ steps.version.outputs.version }}-dry-run
+          path: |
+            release/ShowMasters-Lasso-Setup.exe
+            release/ShowMasters-Lasso-Setup.exe.blockmap
+            release/latest.yml
+            public/updates
+          if-no-files-found: error
+
+      - name: Pull Vercel production configuration
+        if: steps.version.outputs.dry_run != 'true'
+        run: pnpm dlx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Vercel deployment
+        if: steps.version.outputs.dry_run != 'true'
+        run: pnpm dlx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy Vercel production build
+        if: steps.version.outputs.dry_run != 'true'
+        run: pnpm dlx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Commit and tag release
+        if: steps.version.outputs.publish_release == 'true'
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json pnpm-lock.yaml
+
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "chore: release v${{ steps.version.outputs.version }}"
+          }
+
+          git tag -a '${{ steps.version.outputs.tag }}' -m 'Release ${{ steps.version.outputs.tag }}'
+          git push origin HEAD:master '${{ steps.version.outputs.tag }}'
+
+      - name: Create GitHub release
+        if: steps.version.outputs.publish_release == 'true'
+        shell: pwsh
+        run: gh release create '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' --title '${{ steps.version.outputs.tag }}' --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Replace installer on existing release
+        if: steps.version.outputs.publish_release == 'false'
+        shell: pwsh
+        run: gh release upload '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

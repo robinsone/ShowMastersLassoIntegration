@@ -71,6 +71,23 @@ Installed copies require an internet connection because every import communicate
 Lasso. When offline, the app shows a reconnect screen and automatically becomes
 available again once connectivity returns.
 
+### Windows desktop app
+
+Download `ShowMasters-Lasso-Setup.exe` from the latest GitHub Release to install the
+Windows desktop app. It contains the local connection service required to proxy Lasso
+API requests. The app checks for updates at startup and every four hours, downloads them
+in the background, and prompts you to restart when one is ready.
+
+The installer is currently unsigned, so Windows may show a SmartScreen warning. Choose
+**More info** and then **Run anyway** only when the installer was downloaded from this
+repository's GitHub Release.
+
+For desktop development, run:
+
+```bash
+pnpm electron:dev
+```
+
 ## How to use the app
 
 ### 1. Configure Lasso credentials

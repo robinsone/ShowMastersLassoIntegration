@@ -6,6 +6,9 @@
 .cache
 .vscode
 dist
+release
+public/updates
+electron/dist
 
 # Node dependencies
 node_modules
