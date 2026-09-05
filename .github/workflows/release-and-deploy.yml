@@ -1,4 +1,4 @@
-name: Release and deploy
+name: Build Windows release
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing vX.Y.Z tag to rebuild and redeploy (required unless dry_run is selected)
+        description: Existing vX.Y.Z tag to rebuild and republish (required unless dry_run is selected)
         required: false
         type: string
       dry_run:
@@ -95,19 +95,6 @@ jobs:
       - name: Build Windows installer
         run: pnpm electron:build
 
-      - name: Stage updater files for Vercel
-        shell: pwsh
-        run: |
-          $updatesDirectory = 'public/updates'
-          New-Item -ItemType Directory -Force -Path $updatesDirectory | Out-Null
-          Copy-Item 'release/ShowMasters-Lasso-Setup.exe' $updatesDirectory -Force
-          Copy-Item 'release/latest.yml' $updatesDirectory -Force
-
-          $blockMap = 'release/ShowMasters-Lasso-Setup.exe.blockmap'
-          if (Test-Path $blockMap) {
-            Copy-Item $blockMap $updatesDirectory -Force
-          }
-
       - name: Upload dry-run artifacts
         if: steps.version.outputs.dry_run == 'true'
         uses: actions/upload-artifact@v4
@@ -117,29 +104,7 @@ jobs:
             release/ShowMasters-Lasso-Setup.exe
             release/ShowMasters-Lasso-Setup.exe.blockmap
             release/latest.yml
-            public/updates
           if-no-files-found: error
-
-      - name: Pull Vercel production configuration
-        if: steps.version.outputs.dry_run != 'true'
-        run: pnpm dlx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build Vercel deployment
-        if: steps.version.outputs.dry_run != 'true'
-        run: pnpm dlx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy Vercel production build
-        if: steps.version.outputs.dry_run != 'true'
-        run: pnpm dlx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Commit and tag release
         if: steps.version.outputs.publish_release == 'true'
@@ -160,13 +125,13 @@ jobs:
       - name: Create GitHub release
         if: steps.version.outputs.publish_release == 'true'
         shell: pwsh
-        run: gh release create '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' --title '${{ steps.version.outputs.tag }}' --generate-notes
+        run: gh release create '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' 'release/ShowMasters-Lasso-Setup.exe.blockmap' 'release/latest.yml' --title '${{ steps.version.outputs.tag }}' --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
 
       - name: Replace installer on existing release
-        if: steps.version.outputs.publish_release == 'false'
+        if: steps.version.outputs.publish_release == 'false' && steps.version.outputs.dry_run != 'true'
         shell: pwsh
-        run: gh release upload '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' --clobber
+        run: gh release upload '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' 'release/ShowMasters-Lasso-Setup.exe.blockmap' 'release/latest.yml' --clobber
         env:
           GH_TOKEN: ${{ github.token }}
