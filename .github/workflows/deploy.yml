@@ -75,6 +75,8 @@ jobs:
         run: pnpm dlx vercel pull --yes --environment=production --scope=robinsones-projects --project=show-masters-lasso-integration --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Vercel deployment
+        env:
+          NITRO_PRESET: vercel
         run: pnpm dlx vercel build --prod --scope=robinsones-projects --project=show-masters-lasso-integration --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Vercel production build
