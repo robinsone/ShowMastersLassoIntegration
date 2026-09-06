@@ -11,6 +11,7 @@ on:
         type: string
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -98,6 +99,13 @@ jobs:
         if: steps.version.outputs.publish_release == 'true'
         shell: pwsh
         run: gh release create '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' 'release/ShowMasters-Lasso-Setup.exe.blockmap' 'release/latest.yml' --title '${{ steps.version.outputs.tag }}' --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger Vercel update deployment
+        if: steps.version.outputs.publish_release == 'true'
+        shell: pwsh
+        run: gh workflow run 'Deploy to Vercel' --ref master -f release_tag='${{ steps.version.outputs.tag }}'
         env:
           GH_TOKEN: ${{ github.token }}
 
