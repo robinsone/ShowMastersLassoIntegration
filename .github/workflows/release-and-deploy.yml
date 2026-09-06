@@ -6,14 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing vX.Y.Z tag to rebuild and republish (required unless dry_run is selected)
-        required: false
+        description: Existing vX.Y.Z tag to rebuild and republish
+        required: true
         type: string
-      dry_run:
-        description: Build and stage release artifacts without deploying or publishing
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -50,30 +45,19 @@ jobs:
           git fetch origin master --tags
 
           if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
-            $dryRun = '${{ inputs.dry_run }}' -eq 'true'
-
-            if ($dryRun) {
-              $version = node -p "require('./package.json').version"
-              $tag = "v$version"
-              'dry_run=true' >> $env:GITHUB_OUTPUT
-              'publish_release=false' >> $env:GITHUB_OUTPUT
+            $tag = '${{ inputs.release_tag }}'
+            if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
+              throw 'release_tag must use the vX.Y.Z format.'
             }
-            else {
-              $tag = '${{ inputs.release_tag }}'
-              if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
-                throw 'release_tag must use the vX.Y.Z format.'
-              }
 
-              $latestTag = git tag --list 'v*' --sort=-version:refname | Select-Object -First 1
-              if ($tag -ne $latestTag) {
-                throw "Manual recovery may only republish the latest release tag ($latestTag)."
-              }
-
-              git checkout $tag
-              $version = $tag.Substring(1)
-              'publish_release=false' >> $env:GITHUB_OUTPUT
-              'dry_run=false' >> $env:GITHUB_OUTPUT
+            $latestTag = git tag --list 'v*' --sort=-version:refname | Select-Object -First 1
+            if ($tag -ne $latestTag) {
+              throw "Manual recovery may only republish the latest release tag ($latestTag)."
             }
+
+            git checkout $tag
+            $version = $tag.Substring(1)
+            'publish_release=false' >> $env:GITHUB_OUTPUT
           }
           else {
             git checkout --detach origin/master
@@ -86,7 +70,6 @@ jobs:
             $version = node -p "require('./package.json').version"
             $tag = "v$version"
             'publish_release=true' >> $env:GITHUB_OUTPUT
-            'dry_run=false' >> $env:GITHUB_OUTPUT
           }
 
           "version=$version" >> $env:GITHUB_OUTPUT
@@ -94,17 +77,6 @@ jobs:
 
       - name: Build Windows installer
         run: pnpm electron:build
-
-      - name: Upload dry-run artifacts
-        if: steps.version.outputs.dry_run == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ShowMasters-Lasso-${{ steps.version.outputs.version }}-dry-run
-          path: |
-            release/ShowMasters-Lasso-Setup.exe
-            release/ShowMasters-Lasso-Setup.exe.blockmap
-            release/latest.yml
-          if-no-files-found: error
 
       - name: Commit and tag release
         if: steps.version.outputs.publish_release == 'true'
@@ -130,7 +102,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Replace installer on existing release
-        if: steps.version.outputs.publish_release == 'false' && steps.version.outputs.dry_run != 'true'
+        if: steps.version.outputs.publish_release == 'false'
         shell: pwsh
         run: gh release upload '${{ steps.version.outputs.tag }}' 'release/ShowMasters-Lasso-Setup.exe' 'release/ShowMasters-Lasso-Setup.exe.blockmap' 'release/latest.yml' --clobber
         env:
