@@ -18,7 +18,6 @@ export interface ParsedCall {
 export interface ParsedJob {
   show: Record<string, string>
   calls: ParsedCall[]
-  lassoStatusId?: number
 }
 
 export interface LogEntry {

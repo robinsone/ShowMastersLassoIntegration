@@ -36,15 +36,11 @@ const CONTACT_FIELDS: InputField[] = [
   { key: 'Orderer Mobile Number', label: 'Client Contact Mobile Number', placeholder: '(555) 555-5555', leadingIcon: 'i-lucide-smartphone', type: 'tel', autocomplete: 'tel' },
 ]
 
-const { jobs, validationErrors, lassoStatuses, startImport, goBack } = useImport()
+const { jobs, validationErrors, startImport, goBack } = useImport()
 
 const activeJobIdx = ref(0)
 const activeJob = computed(() => jobs.value[activeJobIdx.value])
 const notesOpen = ref(false)
-const statusOptions = computed(() =>
-  lassoStatuses.value.map(status => ({ label: status.name, value: status.id }))
-)
-
 const errorsForJob = (idx: number) =>
   validationErrors.value.filter(e => e.jobIndex === idx)
 
@@ -57,7 +53,7 @@ function jobSubLabel(job: ParsedJob) {
   return job.show['Venue'] || job.show['Job Name'] || ''
 }
 function selectedStatusLabel(job: ParsedJob) {
-  return lassoStatuses.value.find(status => status.id === job.lassoStatusId)?.name ?? ''
+  return job.show['Job Confirmation Status'] || 'Unconfirmed'
 }
 function isMissingRequiredField(
   job: ParsedJob,
@@ -183,10 +179,8 @@ function callBorderClass(type: string): string {
                 </div>
               </template>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                <UFormField label="Job Confirmation Status *" name="lassoStatusId"
-                  :class="['min-w-0', { 'rounded-md border border-error bg-error/5 p-2': activeJob.lassoStatusId == null }]">
-                  <USelect v-model="activeJob.lassoStatusId" :items="statusOptions"
-                    placeholder="Select a Lasso job confirmation status" size="sm" class="w-full" />
+                <UFormField label="Job Confirmation Status" name="Job Confirmation Status" class="min-w-0">
+                  <UInput :model-value="'Unconfirmed'" readonly disabled size="sm" class="w-full" />
                 </UFormField>
                 <UFormField v-for="f in SHOW_FIELDS" :key="f.key" :label="f.label + (f.required ? ' *' : '')"
                   :name="f.key" :description="f.description"
