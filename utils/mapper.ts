@@ -56,7 +56,7 @@ export function buildVenuePayload(show: ShowRow, airportCode: string | null, mar
 
 export function buildEventPayload(
   show: ShowRow,
-  refs: { clientId: number; venueId: number; airportCode: string | null; marketId: number | null },
+  refs: { clientId: number; venueId: number; statusId: number; airportCode: string | null; marketId: number | null },
   calls: Array<{ date: string }>,
   divisionId: number | null,
   existingDescription?: string | null
@@ -68,6 +68,7 @@ export function buildEventPayload(
     division: divisionId,
     client: refs.clientId,
     venue: refs.venueId,
+    account_event_status: refs.statusId,
     nearest_airport: refs.airportCode,
     date_begin: isoDates[0] ?? null,
     date_end: isoDates[isoDates.length - 1] ?? null,

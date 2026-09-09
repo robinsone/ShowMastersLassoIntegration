@@ -56,9 +56,10 @@ export interface ImportLookups {
   accountUserRoles: any[]
   airportCode: string
   marketId: number | null
+  statusId: number
 }
 
-export async function resolveImportLookups(show: ShowRow): Promise<ImportLookups> {
+export async function resolveImportLookups(show: ShowRow, statusId: number): Promise<ImportLookups> {
   const [accountUserRoles, markets, airports] = await Promise.all([
     api.getAccountUserRoles(),
     api.getMarkets(),
@@ -76,7 +77,7 @@ export async function resolveImportLookups(show: ShowRow): Promise<ImportLookups
 
   const airportCode = await resolveAirportCode(marketStr, airports)
 
-  return { accountUserRoles, airportCode, marketId }
+  return { accountUserRoles, airportCode, marketId, statusId }
 }
 
 // ─── Upsert helpers ───────────────────────────────────────────────────────────

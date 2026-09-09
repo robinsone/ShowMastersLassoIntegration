@@ -3,7 +3,7 @@ import { validateJobs, type ValidationError } from '../utils/validate'
 import { decodeCSVContent, parseCSVContent } from '../utils/csvParser'
 import { parseExcelContent } from '../utils/excelParser'
 import { resolveImportLookups, importShow, resolvePositionIds } from '../utils/importer'
-import { getAllPositions } from '../utils/lassoApi'
+import { getAllPositions, getUnconfirmedAccountEventStatusId } from '../utils/lassoApi'
 
 /**
  * Central composable that manages the full import flow state.
@@ -79,6 +79,7 @@ export const useImport = () => {
     const push = (entry: LogEntry) => { logs.value.push(entry) }
 
     try {
+      const unconfirmedStatusId = await getUnconfirmedAccountEventStatusId()
       const lassoPositions = await getAllPositions()
       const positionIds = resolvePositionIds(jobs.value, lassoPositions)
       push({
@@ -102,7 +103,7 @@ export const useImport = () => {
           total: jobs.value.length,
         })
 
-        const lookups = await resolveImportLookups(show)
+        const lookups = await resolveImportLookups(show, unconfirmedStatusId)
 
         const logFn = (action: string, entity: string, name: string) => {
           push({ type: 'log', action, entity, name })
