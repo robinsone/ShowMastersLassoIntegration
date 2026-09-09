@@ -19,7 +19,7 @@ const REQUIRED_SHOW_FIELDS: string[] = [
  * Validates all parsed jobs and returns an array of validation errors.
  * Returns an empty array if all jobs are valid.
  */
-export function validateJobs(jobs: ParsedJob[], requireLassoStatus = false): ValidationError[] {
+export function validateJobs(jobs: ParsedJob[]): ValidationError[] {
   const errors: ValidationError[] = []
 
   for (let i = 0; i < jobs.length; i++) {
@@ -29,10 +29,6 @@ export function validateJobs(jobs: ParsedJob[], requireLassoStatus = false): Val
       if (!show[field]?.trim()) {
         errors.push({ jobIndex: i, field, message: `"${field}" is required.` })
       }
-    }
-
-    if (requireLassoStatus && jobs[i].lassoStatusId == null) {
-      errors.push({ jobIndex: i, field: 'Job Confirmation Status', message: 'Select a Lasso Job Confirmation Status.' })
     }
 
     if (!calls.length) {

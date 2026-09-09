@@ -104,8 +104,16 @@ async function getAll<T>(endpoint: string, params: Record<string, string | numbe
 
 export const getAccountUserRoles = () => getAll<any>('/account_user_role')
 export const getMarkets = () => getAll<any>('/markets')
-export const getAccountEventStatuses = () => getAll<AccountEventStatus>('/account_event_statuses')
 export const getAirports = (params?: Record<string, string>) => getAll<any>('/airports', params)
+
+export async function getUnconfirmedAccountEventStatusId(): Promise<number> {
+  const statuses = await getAll<AccountEventStatus>('/account_event_statuses')
+  const unconfirmed = statuses.find(status => status.name.trim().toLowerCase() === 'unconfirmed')
+  if (!unconfirmed) {
+    throw new Error('Lasso did not return an Account Status named "Unconfirmed". Check the connection and try again.')
+  }
+  return unconfirmed.id
+}
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
 

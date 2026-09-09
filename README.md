@@ -109,8 +109,7 @@ during development.
 After upload, the app shows a review screen. Use this step to:
 
 - inspect the parsed jobs
-- confirm the Job Confirmation Status default: Confirmed when the imported status is populated, or Unconfirmed when it is blank
-- review and edit Job Confirmation Status before importing
+- confirm Job Confirmation Status is read-only and fixed to Unconfirmed
 - fix any fields before importing, including a missing Billable Company
 - review client, venue, event, and onsite notes
 - add or remove calls and positions if needed

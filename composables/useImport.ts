@@ -3,7 +3,7 @@ import { validateJobs, type ValidationError } from '../utils/validate'
 import { decodeCSVContent, parseCSVContent } from '../utils/csvParser'
 import { parseExcelContent } from '../utils/excelParser'
 import { resolveImportLookups, importShow, resolvePositionIds } from '../utils/importer'
-import { getAccountEventStatuses, getAllPositions, type AccountEventStatus } from '../utils/lassoApi'
+import { getAllPositions, getUnconfirmedAccountEventStatusId } from '../utils/lassoApi'
 
 /**
  * Central composable that manages the full import flow state.
@@ -16,13 +16,12 @@ export const useImport = () => {
   const isImporting = useState<boolean>('import_running', () => false)
   const importError = useState<string | null>('import_error', () => null)
   const validationErrors = useState<ValidationError[]>('import_validation_errors', () => [])
-  const lassoStatuses = useState<AccountEventStatus[]>('import_lasso_statuses', () => [])
   const isUploading = useState<boolean>('import_uploading', () => false)
   const uploadError = useState<string | null>('import_upload_error', () => null)
 
   // Re-validate whenever job data is edited in the review step
   watch(jobs, (updated) => {
-    validationErrors.value = validateJobs(updated, lassoStatuses.value.length > 0)
+    validationErrors.value = validateJobs(updated)
   }, { deep: true })
 
   const completedJobs = computed(() =>
@@ -34,7 +33,6 @@ export const useImport = () => {
     isUploading.value = true
     uploadError.value = null
     jobs.value = []
-    lassoStatuses.value = []
     validationErrors.value = []
 
     try {
@@ -47,51 +45,12 @@ export const useImport = () => {
               throw new Error('Select a ShowMasters CSV or .xlsx file.')
             })()
 
-      let statuses: AccountEventStatus[]
-      try {
-        statuses = await getAccountEventStatuses()
-      } catch (err: any) {
-        uploadError.value = `Unable to fetch Lasso Account Statuses. ${err.message ?? 'Check the connection and try again.'}`
-        return
-      }
-
-      if (statuses.length === 0) {
-        uploadError.value = 'Lasso did not return any Account Status values. Check the connection and try again.'
-        return
-      }
-
-      const confirmedStatus = statuses.find(
-        status => status.name.trim().toLowerCase() === 'confirmed'
-      )
-      const unconfirmedStatus = statuses.find(
-        status => status.name.trim().toLowerCase() === 'unconfirmed'
-      )
-      const needsConfirmedStatus = parsed.some(job => !!job.show['Job Confirmation Status']?.trim())
-      const needsUnconfirmedStatus = parsed.some(job => !job.show['Job Confirmation Status']?.trim())
-
-      if (needsConfirmedStatus && !confirmedStatus) {
-        uploadError.value = 'Lasso did not return an Account Status named "Confirmed". Check the connection and try again.'
-        return
-      }
-      if (needsUnconfirmedStatus && !unconfirmedStatus) {
-        uploadError.value = 'Lasso did not return an Account Status named "Unconfirmed". Check the connection and try again.'
-        return
-      }
-
       for (const job of parsed) {
-        const defaultStatus = job.show['Job Confirmation Status']?.trim()
-          ? confirmedStatus
-          : unconfirmedStatus
-        if (!defaultStatus) {
-          uploadError.value = 'Could not determine a default Lasso Account Status. Check the connection and try again.'
-          return
-        }
-        job.lassoStatusId = defaultStatus.id
+        job.show['Job Confirmation Status'] = 'Unconfirmed'
       }
 
-      lassoStatuses.value = statuses
       jobs.value = parsed
-      validationErrors.value = validateJobs(parsed, true)
+      validationErrors.value = validateJobs(parsed)
       step.value = 'review'
     } catch (err: any) {
       uploadError.value = err.message ?? 'Failed to parse the uploaded file.'
@@ -102,7 +61,7 @@ export const useImport = () => {
 
   // ─── Start Import (client-side, direct API calls) ──────────────────
   async function startImport() {
-    const currentValidationErrors = validateJobs(jobs.value, true)
+    const currentValidationErrors = validateJobs(jobs.value)
     if (currentValidationErrors.length) {
       validationErrors.value = currentValidationErrors
       return
@@ -120,6 +79,7 @@ export const useImport = () => {
     const push = (entry: LogEntry) => { logs.value.push(entry) }
 
     try {
+      const unconfirmedStatusId = await getUnconfirmedAccountEventStatusId()
       const lassoPositions = await getAllPositions()
       const positionIds = resolvePositionIds(jobs.value, lassoPositions)
       push({
@@ -134,7 +94,7 @@ export const useImport = () => {
         if (!job) {
           throw new Error(`Could not read job ${i + 1} before importing.`)
         }
-        const { show, calls, lassoStatusId } = job
+        const { show, calls } = job
 
         push({
           type: 'job_start',
@@ -143,10 +103,7 @@ export const useImport = () => {
           total: jobs.value.length,
         })
 
-        if (lassoStatusId == null) {
-          throw new Error(`Select a Lasso Job Confirmation Status for job ${show['Job Number']} before importing.`)
-        }
-        const lookups = await resolveImportLookups(show, lassoStatusId)
+        const lookups = await resolveImportLookups(show, unconfirmedStatusId)
 
         const logFn = (action: string, entity: string, name: string) => {
           push({ type: 'log', action, entity, name })
@@ -177,7 +134,6 @@ export const useImport = () => {
     importError.value = null
     uploadError.value = null
     validationErrors.value = []
-    lassoStatuses.value = []
   }
 
   // Navigate to the previous logical step without clearing job data.
@@ -207,7 +163,6 @@ export const useImport = () => {
     importError,
     uploadError,
     validationErrors,
-    lassoStatuses,
     completedJobs,
     uploadAndParse,
     startImport,
