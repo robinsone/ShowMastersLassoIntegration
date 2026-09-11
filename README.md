@@ -1,143 +1,224 @@
-# ShowMasters → Lasso Integration
+# ShowMasters to Lasso Integration
 
-A web app for importing ShowMasters CSV and Excel exports into the [Lasso Workforce](https://www.lasso.io/) API.
+Import ShowMasters CSV and Excel exports into the
+[Lasso Workforce](https://www.lasso.io/) API. This guide is for developers
+forking the project to adapt, test, and publish their own version.
 
-The app guides you through four steps:
+## What the importer manages
 
-1. Upload a ShowMasters CSV or Excel file.
-2. Review and edit the parsed jobs.
-3. Run the import into Lasso.
-4. Confirm completion and review the log.
+Each job creates or updates a Lasso client, client contact, venue, event,
+event groups, event positions, and schedule entries. Re-importing a job updates
+managed records instead of creating duplicates.
 
-## What it imports
-
-For each job in the file, the app creates or updates the corresponding Lasso records:
-
-- **Client** - matched by name; contact info attached
-- **Venue** - matched by name; address, airport, and notes applied
-- **Event** - named by Job Number; linked to client, venue, dates, and an optional division
-- **Event Description** - booking staff notes, crew notes, onsite contact, logistics, and payment details
-- **Event Groups** - one per call type/date combination, such as LOAD IN or LOAD OUT
-- **Event Positions** - one per position per group, with quantity, schedule times, and crew-visible dress-code notes
-- **Schedule Entries** - one per event position, matching the source call date and times; dates
-  without a source call remain unscheduled
-
-The import is idempotent. Running it again on the same data updates only what changed and avoids creating duplicates.
+Events are identified by ShowMasters `Job Number`. Calls are grouped by `Date`
+and `Call Type`. Source-managed schedule entries missing from a later import
+are removed.
 
 ## Prerequisites
 
+- Git and a GitHub account
 - Node.js 22 or newer
 - `pnpm`
-- Lasso API access
-- Every position named in the CSV or Excel file must already exist in Lasso. The importer matches
-  position titles case-insensitively after trimming surrounding whitespace.
+- Visual Studio Code with the **Vue - Official** extension
+- A Lasso sandbox, API key, and base URL; division ID is optional
 
-  The importer maps **Billable Company** to the Lasso client and the **Orderer** fields to its client
-  contact. If a file does not include Billable Company, enter the client company during review before
-  importing.
+Every position named in an import must already exist in Lasso. The importer
+matches position titles case-insensitively after trimming surrounding spaces.
 
-## First-time setup
+`Billable Company` identifies the Lasso client. The `Orderer` fields identify
+its contact. Add a missing billable company during the review step before
+importing.
 
-Create a local `.env` file from the example file and fill in your Lasso settings:
+## Fork and synchronize upstream
+
+Fork this repository on GitHub, clone your fork, and configure the original
+repository as `upstream`. Work on a branch in your fork rather than committing
+directly to its default branch.
 
 ```bash
-cp .env.example .env
+git clone https://github.com/YOUR-ACCOUNT/ShowMastersLassoIntegration.git
+cd ShowMastersLassoIntegration
+git remote add upstream https://github.com/robinsone/ShowMastersLassoIntegration.git
+git checkout -b my-change
 ```
 
-Set the following values in `.env`:
-
-- `LASSO_API_KEY`
-- `LASSO_BASE_URL`
-- `DIVISION_ID` (optional; leave blank when the Lasso account has no divisions)
-
-## Run the app locally
-
-Install dependencies and start the dev server:
+Before starting a new change, fetch upstream and merge its default branch into
+your branch. Resolve conflicts, validate the result, and push the updated
+branch to your fork.
 
 ```bash
-pnpm install
+git fetch upstream
+git merge upstream/master
+git push origin my-change
+```
+
+## Develop in Visual Studio Code
+
+Open the cloned repository with **File > Open Folder...**, or run `code .`
+from the repository root. Open an integrated terminal with
+**Terminal > New Terminal**.
+
+If `pnpm` is unavailable, run `corepack enable` once and restart the terminal.
+Install the lockfile-pinned dependencies, then start the Nuxt development
+server.
+
+```bash
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the local URL shown in the terminal, usually `http://localhost:3000`.
+Open the URL printed by the terminal, usually `http://localhost:3000`. Keep the
+terminal running while you work, then use `Ctrl+C` in that terminal to stop it.
 
-## Install the app
+Run `pnpm electron:dev` instead to launch the Windows desktop app during
+development. It starts the local Nuxt server and opens an Electron window.
 
-The hosted app can be installed as a progressive web app in Chrome or Edge on desktop,
-and in Chrome on Android. Use the **Install app** button in the header. If the browser
-does not show a native install prompt yet, the button provides the browser-specific
-installation steps instead.
+## Configure Lasso and sample data
 
-Installed copies require an internet connection because every import communicates with
-Lasso. When offline, the app shows a reconnect screen and automatically becomes
-available again once connectivity returns.
+The app does not require a `.env` file for normal use. Enter the Lasso API key
+and base URL in the app's configuration screen. Enter a positive division ID
+only when the Lasso account uses divisions.
 
-### Windows desktop app
+Settings are stored in the current browser's local storage. Configure each
+browser or browser profile separately, and use sandbox credentials while
+developing or validating a change.
 
-Download `ShowMasters-Lasso-Setup.exe` from the latest GitHub Release to install the
-Windows desktop app. It contains the local connection service required to proxy Lasso
-API requests. The app checks for updates at startup and every four hours, downloads them
-in the background, and prompts you to restart when one is ready.
+Keep representative, sanitized exports in `data/`. Use
+`SimpleData.csv`, `SimpleData-Revised.csv`, and
+`SimpleData-MultipleJobs.xlsx` as regression samples.
 
-The installer is currently unsigned, so Windows may show a SmartScreen warning. Choose
-**More info** and then **Run anyway** only when the installer was downloaded from this
-repository's GitHub Release.
+## Update CSV and Excel mappings
 
-For desktop development, run:
+Treat a changed ShowMasters export as an integration change. First determine
+whether its headers, row structure, source values, or desired Lasso mapping
+changed.
+
+### Import contract
+
+A row with `DATA` set to `VALUE` begins a job. Excel imports use the first
+non-empty worksheet, whose first populated row must contain the required
+headers.
+
+| Export field | Purpose |
+| --- | --- |
+| `DATA` | Marks the first row of a job with `VALUE`. |
+| `Job Number` | Identifies an event and repeat imports. |
+| `Date`, `Start Time`, `End Time` | Set event and schedule dates and times. |
+| `Call Type` | Groups positions into Lasso event groups. |
+| `Position Title`, `Position Quantity per Title` | Resolve a Lasso position and its quantity. |
+
+`Dress Code` is optional and becomes an event-position note. A position title
+may include an optional label, such as `Stagehand <A>`.
+
+### Code ownership
+
+| Change | Update |
+| --- | --- |
+| CSV header or row parsing | `utils/csvParser.ts` |
+| Required Excel headers or worksheet parsing | `utils/excelParser.ts` |
+| ShowMasters-to-Lasso field mapping | `utils/mapper.ts` |
+| Roles, airport fallbacks, or rate defaults | `utils/mappingConfig.ts` |
+| Import identity or schedule reconciliation | `utils/importer.ts` |
+
+Add a sanitized sample that demonstrates the changed export. Update CSV and
+Excel parsing together when their shared contract changes.
+
+Do not change external-code construction without intentionally changing import
+identity. Those codes allow repeated imports to update existing events, groups,
+positions, and schedule entries.
+
+## Validate changes
+
+Run a production build after every code or dependency change.
 
 ```bash
-pnpm electron:dev
+pnpm build
 ```
 
-## How to use the app
+Upload the affected samples to the local app and inspect the review screen.
+Then import them into a Lasso sandbox and verify the resulting records before
+using production data.
 
-### 1. Configure Lasso credentials
+## Submit changes
 
-The first time you open the app, it shows a credentials screen. Enter the Lasso API information there so the app can talk to your sandbox or production instance. Division ID is optional: leave it blank when the Lasso account has no divisions, or enter the positive numeric ID returned by Lasso.
+Create one feature branch per focused change. Do not commit Lasso credentials,
+production exports, or customer data. Use sanitized fixtures in `data/` when
+the change affects import behavior.
 
-### 2. Upload a CSV or Excel file
+Before sharing a branch, complete the validation steps above and review the
+resulting import in a sandbox. Commit the source, fixture, and README changes
+needed to explain the new behavior.
 
-Use the upload step to choose a ShowMasters `.csv` or unprotected `.xlsx` export. Excel files must
-have the existing SimpleData headers in their first populated row; the app reads the first non-empty
-worksheet. If you do not select a file, the app will keep using its default sample data only as a reference
-during development.
+Push the branch to your fork and open a pull request against the repository
+that should receive the change. Use the pull request to describe the export
+change, the expected Lasso result, and the sandbox validation performed.
 
-`data/SimpleData-MultipleJobs.xlsx` is a non-production sample workbook containing two jobs.
+## Publish your fork
 
-### 3. Review and edit parsed jobs
+Deploy the app to a Node-capable host. The Nitro server proxies Lasso API
+requests, so static-only hosts, including GitHub Pages, are not supported.
 
-After upload, the app shows a review screen. Use this step to:
+Configure your host to install dependencies, build the app, and run its
+persistent Node process with these commands.
 
-- inspect the parsed jobs
-- confirm Job Confirmation Status is read-only and fixed to Unconfirmed
-- fix any fields before importing, including a missing Billable Company
-- review client, venue, event, and onsite notes
-- add or remove calls and positions if needed
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm start
+```
 
-If you need to go back, use the Back button. That keeps the parsed data in place so you can continue editing.
+Push the validated branch that your host deploys. After deployment, complete a
+sample sandbox import before entering production Lasso credentials.
 
-### 4. Start the import
+### GitHub release automation
 
-When the review looks correct, choose Start Import. The progress screen shows:
+In the original repository, a push to `master` starts
+`.github/workflows/release-and-deploy.yml`.
 
-- which job is currently being processed
-- a running log of created, updated, and skipped records
-- any import errors that need attention
+The workflow builds the Windows installer, increments the patch version,
+creates a version tag and GitHub Release, and starts the web deployment workflow.
 
-If an error occurs, you can go back to review the data and try again.
+The deployment workflow publishes the web app and desktop-update files to the
+original Vercel project. It uses the original Vercel scope and requires its
+`VERCEL_TOKEN` secret.
 
-Before creating or updating any records, the importer loads Lasso positions once and
-preflights every position in the file. Missing or duplicate position names stop the
-import and list each affected job and call so the positions can be corrected in Lasso.
+Before pushing to `master` in a fork, configure those workflows for your own
+hosting project and credentials, or disable them and use your own release
+process. Do not assume an unmodified fork can publish a release.
 
-### 5. Finish and repeat
+## Windows desktop app
 
-Once the import completes, you can upload another file or reset the workflow to start over.
+Download `ShowMasters-Lasso-Setup.exe` from the latest GitHub Release to
+install the Windows desktop app. It includes the local connection service used
+to proxy Lasso API requests.
+
+The app checks for updates at startup and every four hours. It downloads
+updates in the background and prompts the user to restart when an update is
+ready.
+
+The installer is unsigned. Use **More info** and **Run anyway** only when the
+installer was downloaded from this repository's GitHub Release.
+
+Build a local Windows installer with `pnpm electron:build`. The installer is
+written to the `release/` directory.
+
+## Use the importer
+
+1. Enter Lasso credentials in the app.
+2. Upload a ShowMasters `.csv` or unprotected `.xlsx` export.
+3. Review the parsed jobs, contacts, notes, calls, positions, quantities, and times.
+4. Start the import and review the created, updated, unchanged, or deleted records.
+
+Job Confirmation Status is read-only and fixed to Unconfirmed. If a position
+preflight fails, create the missing Lasso position or remove duplicate Lasso
+positions, then retry the import.
 
 ## Troubleshooting
 
-- If a CSV or Excel file does not parse correctly, make sure it matches the ShowMasters export structure.
-- For Excel files, export an unprotected `.xlsx` copy and ensure the first non-empty worksheet has
-  SimpleData headers in its first populated row.
-- If position preflight fails, create the missing position in Lasso or remove duplicate
-  Lasso positions with the same name, then retry the import.
+If a file does not parse, compare its headers and row layout with the import
+contract and sample files in `data/`. Excel files must be unprotected and use
+the required headers in the first populated row.
+
+If Lasso cannot be reached, confirm the API key and base URL. For import
+errors, return to the review step, correct the reported data, and start the
+import again.
